@@ -21,6 +21,8 @@ DisplayDepthValue::getDepthValue(int x, int y,const QPointF screen_pos,boost::sh
         QString str("深度值:");
         str.append(QString::number(point.z));
         QToolTip::showText(screen_pos.toPoint(),str);
+       // convert->Test(point);
+
 }
     else
     {

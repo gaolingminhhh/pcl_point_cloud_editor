@@ -93,16 +93,11 @@ Select2DTool::end (int x, int y, BitMask modifiers, BitMask)
   IndexVector indices;
   GLfloat project[16];
   glGetFloatv(GL_PROJECTION_MATRIX, project);
-  for(int i=0;i<16;i++)
-  {
-      printf("%f ",project[i]);
-      if((i+1)%4==0)
-          printf("\n");
-  }
-  for(int i=0;i<4;i++)
-  {
-      printf("%d ",viewport[i]);
-  }
+//  for(int i=0;i<12;i+=4)
+//  {
+//      qDebug("%f %f %f %f",project[i],project[i+1],project[i+2],project[i+3]);
+//  }
+  qDebug("%d",GL_PROJECTION_MATRIX);
   Point3DVector ptsvec;
   cloud_ptr_->getDisplaySpacePoints(ptsvec);
   for(std::size_t i = 0; i < ptsvec.size(); ++i)
@@ -132,11 +127,12 @@ bool
 Select2DTool::isInSelectBox (const Point3D& pt,
                              const GLfloat* project,
                              const GLint* viewport) const
-{//将三维坐标点转换成平面坐标点
+{
+    //观察空间转换到裁剪空间
   float w = pt.z * project[11];
   float x = (pt.x * project[0] + pt.z * project[8]) / w;
   float y = (pt.y * project[5] + pt.z * project[9]) / w;
-
+ //屏幕空间到剪裁空间
   float min_x = std::min(origin_x_, final_x_)/(viewport[2]*0.5) - 1.0;
   float max_x = std::max(final_x_, origin_x_)/(viewport[2]*0.5) - 1.0;
   float max_y = (viewport[3] - std::min(origin_y_, final_y_))/(viewport[3]*0.5) - 1.0;

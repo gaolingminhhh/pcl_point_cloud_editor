@@ -52,6 +52,7 @@
 #include <QMenuBar>
 #include <QToolBar>
 #include <pcl/apps/point_cloud_editor/localTypes.h>
+#include <QLayout>
 
 // Forward declaration to prevent circular inclusion
 class CloudEditorWidget;
@@ -102,6 +103,13 @@ class MainWindow : public QMainWindow
     void
     initTimer();
 
+    void SetPoint1Label(QString str);
+    void SetPoint2Label(QString str);
+    void SetPointResultLabel(QString str);
+    QLabel *point1label;
+    QLabel *point2label;
+    QLabel *result;
+
   private Q_SLOTS:
     void
     about ();
@@ -111,12 +119,16 @@ class MainWindow : public QMainWindow
 
     void
     display_z_value_fun();
+    void
+    createRangeWindow();
 
   private:
     /// Initialization function.  This handles the initialization of the widget,
     /// menus, actions, etc.
     void
     initWindow ();
+
+
     
     /// create actions which are connected to file menus
     void 
@@ -207,6 +219,8 @@ class MainWindow : public QMainWindow
     /// action for showing the statistics of the editor
     QAction *show_stat_action_;
 
+    QAction *range;
+
     ///edit by echo
     ///
     QAction *zoom_;
@@ -235,6 +249,8 @@ class MainWindow : public QMainWindow
     /// the help menu
     QMenu *help_menu_;
 
+    QDialog *rangeWindow;
+    QVBoxLayout *layout;
     /// the spin box for adjusting point size.
     QSpinBox *point_size_spin_box_;
 
@@ -255,4 +271,7 @@ class MainWindow : public QMainWindow
 
     /// the slider used for adjusting moving speed.
      QSlider *move_speed_slider_;
+
+
+
 };

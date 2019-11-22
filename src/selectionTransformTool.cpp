@@ -87,7 +87,8 @@ SelectionTransformTool::update (int x, int y, BitMask, BitMask buttons)
     return;
   trackball_.update(x, y);
 
-  if (modifiers_ & isMove)
+ // if (modifiers_ & isMove)
+  if (isMove)
   {
     // selection motion is not applied directly (waits for end)
     // as such we can not update x and y immediately
@@ -97,7 +98,8 @@ SelectionTransformTool::update (int x, int y, BitMask, BitMask buttons)
                                          0.0f);
     return;
   }
-  if (modifiers_ & isScale)
+ // if (modifiers_ & isScale)
+      if (isScale)
   {
     // selection motion is not applied directly (waits for end)
     // as such we can not update x and y immediately

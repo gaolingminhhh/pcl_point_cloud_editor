@@ -42,8 +42,9 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <qgl.h>
-
 #include <pcl/pcl_config.h>
+#include <QToolTip>
+#include <iomanip>
 
 #ifdef OPENGL_IS_A_FRAMEWORK
 # include <OpenGL/glu.h>
@@ -68,11 +69,12 @@
 #include <pcl/apps/point_cloud_editor/denoiseCommand.h>
 #include <pcl/apps/point_cloud_editor/cutCommand.h>
 #include <pcl/apps/point_cloud_editor/mainWindow.h>
-
+#include <pcl/apps/point_cloud_editor/highlightpoints.h>
 CloudEditorWidget::CloudEditorWidget (QWidget *parent)
-  : QGLWidget(QGLFormat(QGL::DoubleBuffer | QGL::DepthBuffer |
-                        QGL::Rgba | QGL::StencilBuffer), parent),
-    point_size_(2.0f), selected_point_size_(4.0f),
+    : QGLWidget(QGLFormat(QGL::DoubleBuffer | QGL::DepthBuffer |
+                          QGL::Rgba | QGL::StencilBuffer), parent),
+    //  QOpenGLWidget(parent),
+      point_size_(2.0f), selected_point_size_(4.0f),
     cam_fov_(60.0), cam_aspect_(1.0), cam_near_(0.0001), cam_far_(100.0),
     color_scheme_(COLOR_BY_PURE), is_colored_(false)
 {
@@ -85,6 +87,7 @@ CloudEditorWidget::CloudEditorWidget (QWidget *parent)
 
 CloudEditorWidget::~CloudEditorWidget ()
 {
+    delete label[count];
 }
 
 void
@@ -333,6 +336,7 @@ CloudEditorWidget::displayZValue(bool isChecked)
     if(isChecked){
         setMouseTracking(true);//如果被选中 开始计时
         displayDepthValue=boost::shared_ptr<DisplayDepthValue>(new DisplayDepthValue());
+
         qDebug("哎呀 被选中了\n");
     }
     else
@@ -544,10 +548,14 @@ CloudEditorWidget::mousePressEvent (QMouseEvent *event)
 
   if(ranging)
   {
-      qDebug("按住 x:%d y:%d",event->x(),event->y());
       ranging->onMousePressed(event->x(),event->y());
   }
+  if(highlight)
+  {
+      hidetag();
+  }
   update();
+  updateGL();
 }
 
 void
@@ -560,7 +568,6 @@ CloudEditorWidget::mouseMoveEvent (QMouseEvent *event)
                       event -> modifiers(), event -> buttons());
 
   }
-
   if(displayDepthValue)
   {
     mTimer.start(500);
@@ -569,7 +576,7 @@ CloudEditorWidget::mouseMoveEvent (QMouseEvent *event)
     screen_pos=event->screenPos();
   }
   update();
-
+  updateGL();
 }
 
 
@@ -581,11 +588,16 @@ CloudEditorWidget::mouseReleaseEvent (QMouseEvent *event)
   tool_ptr_ -> end(event -> x(), event -> y(),
                    event -> modifiers(), event -> button());
 
+  //displayZValueTag();
   if(ranging)
   {
-      qDebug("放开 x:%d y:%d",event->x(),event->y());
-      ranging->onMouseReleased(event->x(),event->y(),event->screenPos(),converter);
+      ranging->onMouseReleased(event->x(),event->y(),event->screenPos(),converter,parentWidget());
   }
+  if(highlight)
+  {
+      highlight->hightlight();
+  }
+  displaytag();
   update();
 }
 
@@ -626,9 +638,10 @@ CloudEditorWidget::loadFilePCD(const std::string &filename)
   copy_buffer_ptr_ = CopyBufferPtr(new CopyBuffer(true));
   cloud_ptr_->setPointSize(point_size_);
   cloud_ptr_->setHighlightPointSize(selected_point_size_);
+  highlight=boost::shared_ptr<HightLightPoints>(new HightLightPoints(cloud_ptr_,selection_ptr_));
   tool_ptr_ =
     boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud_ptr_));
-  converter=boost::shared_ptr<Converter>(new Converter(cloud_ptr_));
+  converter=boost::shared_ptr<Converter>(new Converter(cloud_ptr_,highlight));
   ranging=boost::shared_ptr<Ranging>(new Ranging());
   if (isColored(filename))
   {
@@ -643,11 +656,56 @@ CloudEditorWidget::loadFilePCD(const std::string &filename)
   }
 }
 
+
 void
 CloudEditorWidget::initFileLoadMap()
 {
   cloud_load_func_map_.clear();
   cloud_load_func_map_["pcd"] = &CloudEditorWidget::loadFilePCD;
+}
+
+void CloudEditorWidget::hidetag()
+{
+    if(count==0)
+        return;
+    for(int i=0;i<count;i++)
+    {
+    label[i]->hide();
+    }
+        update();
+   //     updateGL();
+}
+
+void CloudEditorWidget::displaytag()
+{
+    Point3DVector points;
+    cloud_ptr_->getDisplaySpacePoints(points);
+    highlight->getIndicies(index);
+    if(count==0){
+        for(int i=0;i<index.size();i++)
+        {
+            label[i]=new QLabel(this);
+            label[i]->setStyleSheet("color: white");
+            Point3D point3d = cloud_ptr_->getInternalCloud()[index[i]];
+            float zvalue=((int)(point3d.z*100)) / 100.0;
+            QPoint qpt=converter->getScreenPosValue(points[index[i]]);
+            label[i]->setGeometry(qpt.x(),qpt.y(),60,30);
+            label[i]->setText(QString::number(zvalue));
+            label[i] -> setAttribute(Qt::WA_DeleteOnClose);
+        }
+    }
+    count=index.size();
+    for(int i=0;i<count;i++){
+        QPoint qpt=converter->getScreenPosValue(points[index[i]]);
+        //label[i]->setGeometry(qpt.x(),qpt.y(),60,30);
+        label[i]->show();
+        label[i]->move(qpt.x(),qpt.y());
+     //   label[i]->updateGeometry();
+      //  label[i]->repaint();
+}
+    update();
+    updateGeometry();
+    repaint();
 }
 
 bool

@@ -6,20 +6,20 @@
 #include <QWidget>
 #include <pcl/apps/point_cloud_editor/cloud.h>
 
-class RangingDialog:public QWidget{
-    Q_OBJECT
+class RangingDialog{
+//    Q_OBJECT
 public:
-    RangingDialog(QWidget *mwidget=nullptr);
+    RangingDialog(QLabel *label1,QLabel *label2,QLabel *label3);
     ~RangingDialog();
 
-    void ShowDialog(QString point1str,QString point2str,QString result);
+    void SetDialog1(QString point1);
+    void SetDialog2(QString point2);
+    void SetResult(QString result);
 private:
-    QDialog *dialog;
-    QPushButton *button;
-    QVBoxLayout *layout;
+  //  QVBoxLayout *layout;
     QLabel *point1label;
     QLabel *point2label;
     QLabel *result;
-private slots:
-    void btnClicked();
+//private slots:
+//    void btnClicked();
 };

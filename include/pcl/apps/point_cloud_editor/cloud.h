@@ -127,7 +127,18 @@ class Cloud : public Statistics
     {
       x = center_xyz_[X]; y = center_xyz_[Y]; z = center_xyz_[Z];
     }
-
+    inline
+    void
+    getMax (float &x, float &y, float &z) const
+    {
+      x = max_xyz_[X]; y = max_xyz_[Y]; z = max_xyz_[Z];
+    }
+    inline
+    void
+    getMin (float &x, float &y, float &z) const
+    {
+      x = min_xyz_[X]; y = min_xyz_[Y]; z = min_xyz_[Z];
+    }
     /// @brief Returns the scaling factor for the point cloud
     /// @return The scaling factor
     inline
@@ -158,6 +169,7 @@ class Cloud : public Statistics
     /// using OpenGL's column-major format.
     void
     loadMatrix (const float* matrix);
+
 
     /// @brief Right multiplies the cloud matrix with the passed matrix
     /// @details The application of this matrix effectively transforms the
@@ -467,4 +479,5 @@ class Cloud : public Statistics
 
     /// The translations on x, y, and z axis on the selected points.
     float select_translate_x_, select_translate_y_, select_translate_z_;
+
 };

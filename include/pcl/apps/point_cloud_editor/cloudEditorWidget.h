@@ -50,8 +50,11 @@
 #include <pcl/apps/point_cloud_editor/screenpointconverter.h>
 #include <pcl/apps/point_cloud_editor/ranging.h>
 #include <pcl/apps/point_cloud_editor/rangingdialog.h>
-
+#include <pcl/apps/point_cloud_editor/highlightpoints.h>
+#include <vector>
+#include <QMainWindow>
 #include <QGLWidget>
+#include <QLabel>
 
 #include <functional>
 
@@ -80,6 +83,9 @@ class CloudEditorWidget : public QGLWidget
 
     void
     displayZValue(bool isChecked);
+
+    void
+    displaytag();
 
   public Q_SLOTS:
     /// @brief Loads a new cloud.
@@ -208,6 +214,16 @@ class CloudEditorWidget : public QGLWidget
     void
     zoom();
 
+    void
+    hidetag();
+//    void
+//    displayZValueTag();
+
+//    void
+//    createLabel();
+
+//    void
+//    updateLabels();
 
   protected:  
     /// initializes GL
@@ -243,7 +259,6 @@ class CloudEditorWidget : public QGLWidget
 
     QTimer mTimer;
 
-    boost::shared_ptr<Converter> converter;
 
   private:
     
@@ -316,6 +331,10 @@ class CloudEditorWidget : public QGLWidget
 
     boost::shared_ptr<RangingDialog> rangingDialog;
 
+
+    boost::shared_ptr<Converter> converter;
+
+    boost::shared_ptr<HightLightPoints> highlight;
     /// The camera field of view
     double cam_fov_;
 
@@ -349,4 +368,8 @@ class CloudEditorWidget : public QGLWidget
     int stop_x;
     int stop_y;
     QPointF screen_pos;
+    std::vector<QPointF> screen_points;
+    IndexVector index;
+    int count=0;
+    QLabel *label[];
 };

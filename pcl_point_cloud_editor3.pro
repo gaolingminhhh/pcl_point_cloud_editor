@@ -49,7 +49,8 @@ SOURCES += \
     src/displayDepthValue.cpp \
     src/ranging.cpp \
     src/screenpointconverter.cpp \
-    src/rangingdialog.cpp
+    src/rangingdialog.cpp \
+    src/highlightpoints.cpp
 
 HEADERS += \
     include/pcl/apps/point_cloud_editor/cloud.h \
@@ -80,6 +81,7 @@ HEADERS += \
     include/pcl/apps/point_cloud_editor/ranging.h \
     include/pcl/apps/point_cloud_editor/screenpointconverter.h \
     include/pcl/apps/point_cloud_editor/rangingdialog.h \
+    include/pcl/apps/point_cloud_editor/highlightpoints.h
 
 RESOURCES += \
     resources/pceditor_resources.qrc

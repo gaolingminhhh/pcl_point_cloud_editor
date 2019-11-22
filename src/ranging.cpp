@@ -1,9 +1,9 @@
 #include <pcl/apps/point_cloud_editor/ranging.h>
 #include <algorithm>
 #include <math.h>
-#include <QToolTip>
 #include <QWidget>
-
+#include <pcl/apps/point_cloud_editor/mainWindow.h>
+#include <QToolTip>
 
 Ranging::Ranging()
 {
@@ -14,7 +14,7 @@ Ranging::~Ranging()
 
 }
 void
-Ranging::getPoint3D(int x, int y,const QPointF screen_pos,boost::shared_ptr<Converter> converter)
+Ranging::getPoint3D(int x, int y,const QPointF screen_pos,boost::shared_ptr<Converter> converter,QWidget *widget)
 {
     Point3D point;
     QString str1,str2;
@@ -28,22 +28,22 @@ Ranging::getPoint3D(int x, int y,const QPointF screen_pos,boost::shared_ptr<Conv
         str2.append(")");
         if(times==0){
             point1=point;
-            str1=QString("第一个点(");
+            str1=QString("点1(");
             point1str.append(str1);
             point1str.append(str2);
            // setHighlightColor(point1);
+            ((MainWindow*)widget)->SetPoint1Label(point1str);
         }
         else
         {
             point2=point;
-            str1=QString("第二个点(");
+            str1=QString("点2(");
             point2str.append(str1);
             point2str.append(str2);
             //setHighlightColor(point2);
+            ((MainWindow*)widget)->SetPoint2Label(point2str);
 
         }
-
-        QToolTip::showText(screen_pos.toPoint(),str1.append(str2));
         times++;
         qDebug("转换成了点 %d",times);
     }
@@ -78,20 +78,20 @@ return sqrt(disx*disx+disy*disy+disz*disz);
 }
 
 void
-Ranging::onMouseReleased(int x,int y,const QPointF screen_pos,boost::shared_ptr<Converter> converter)
+Ranging::onMouseReleased(int x,int y,const QPointF screen_pos,boost::shared_ptr<Converter> converter,QWidget *widget)
 {
-    qDebug("times %d",times);
     //如果没有移动位置
     if(final_x==x&&final_y==y)
     {
-        getPoint3D(x,y,screen_pos,converter);
+        getPoint3D(x,y,screen_pos,converter,widget);
     }
     if(times==2)
     {
         //TODO 显示距离
         qDebug("两点之间的距离为:%f",getDistanceOfPoints());
         resultstr.append(QString("距离为:")).append(QString::number(distance));
-        QToolTip::showText(screen_pos.toPoint(),resultstr);
+
+        ((MainWindow*)widget)->SetPointResultLabel(resultstr);
         reset();
     }
 }

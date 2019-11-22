@@ -41,6 +41,7 @@
 #include <pcl/apps/point_cloud_editor/mainWindow.h>
 #include <pcl/apps/point_cloud_editor/cloudEditorWidget.h>
 #include <pcl/apps/point_cloud_editor/localTypes.h>
+#include <QLayout>
 
 MainWindow::MainWindow () :
   window_width_(WINDOW_WIDTH), window_height_(WINDOW_HEIGHT)
@@ -59,6 +60,25 @@ window_width_(WINDOW_WIDTH), window_height_(WINDOW_HEIGHT)
 MainWindow::~MainWindow()
 {
 
+}
+
+void
+MainWindow::SetPoint1Label(QString str)
+{
+    point1label->setText(str);
+    qDebug("显示1");
+
+}
+
+void MainWindow::SetPoint2Label(QString str)
+{
+    point2label->setText(str);
+    qDebug("显示2");
+}
+
+void MainWindow::SetPointResultLabel(QString str)
+{
+    result->setText(str);
 }
 
 void
@@ -136,6 +156,8 @@ MainWindow::initWindow ()
   createToolBars();
   setWindowTitle(tr("PCL 3D 编辑器"));
   resize(window_width_, window_height_);
+createRangeWindow();
+// InitLabels();
 }
 
 void
@@ -221,6 +243,9 @@ MainWindow::createActions ()
   connect(denoise_action_, SIGNAL(triggered()), cloud_editor_widget_,
           SLOT(denoise()));
 
+  range=new QAction(QString("测距"),this);
+  connect(range,SIGNAL(triggered()),this,SLOT(createRangeWindow()));
+
   select_action_ = new QAction(QIcon(icon_path+"click.png"),
                                QString("点选"), action_group_);
   connect(select_action_, SIGNAL(triggered()), cloud_editor_widget_,
@@ -263,7 +288,9 @@ MainWindow::createActions ()
           SLOT(move()));
   move->setCheckable(true);
 
+
 }
+
 
 void
 MainWindow::createMenus ()
@@ -308,6 +335,7 @@ MainWindow::createMenus ()
   tool_menu_ = new QMenu(QString("&算法"), this);
 //  tool_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
   tool_menu_ -> addAction(denoise_action_);
+  tool_menu_->addAction(range);
 
   help_menu_ = new QMenu(QString("&帮助"), this);
 //  help_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
@@ -406,7 +434,7 @@ MainWindow::createSpinBoxes ()
   selected_point_size_spin_box_ -> setAttribute(Qt::WA_DeleteOnClose);
   selected_point_size_spin_box_ -> setRange(1, 20);
   selected_point_size_spin_box_ -> setSingleStep(1);
-  selected_point_size_spin_box_ -> setValue(4);
+  selected_point_size_spin_box_ -> setValue(10);
   connect(selected_point_size_spin_box_, SIGNAL(valueChanged(int)),
           cloud_editor_widget_, SLOT(setSelectedPointSize(int)));
 }
@@ -420,4 +448,27 @@ MainWindow::createSliders ()
   move_speed_slider_ -> setTickPosition(QSlider::TicksBothSides);
   move_speed_slider_ -> setTickInterval(10);
   move_speed_slider_ -> setSingleStep(1);
+}
+
+void
+MainWindow::createRangeWindow()
+{
+    rangeWindow=new QDialog(this);
+    rangeWindow->setAttribute(Qt::WA_DeleteOnClose);
+    rangeWindow->setWindowTitle("测距");
+   rangeWindow->setGeometry(geometry().right(),100,200,100);
+    layout=new QVBoxLayout();
+    point1label=new QLabel("第一个点:(0,0,0)");
+    point2label=new QLabel("第二个点(0,0,0)");
+    result=new QLabel("距离为:0");
+
+    point1label->setAttribute(Qt::WA_DeleteOnClose);
+    point2label->setAttribute(Qt::WA_DeleteOnClose);
+    result->setAttribute(Qt::WA_DeleteOnClose);
+    layout->addWidget(point1label);
+    layout->addWidget(point2label);
+    layout->addWidget(result);
+    rangeWindow->setLayout(layout);
+    rangeWindow->show();
+    rangeWindow->raise();
 }

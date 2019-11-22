@@ -252,7 +252,6 @@ void
 Cloud::draw (bool disable_highlight) const
 {
   SelectionPtr selection_ptr = selection_wk_ptr_.lock();
-
   glPushAttrib(GL_CURRENT_BIT | GL_POINT_BIT | GL_COLOR_BUFFER_BIT);
   {
     glPointSize(point_size_);
@@ -358,6 +357,7 @@ Cloud::setHighlightPointSize (int size)
   selected_point_size_ = size;
 }
 
+//得到对象空间的点
 Point3D
 Cloud::getObjectSpacePoint (unsigned int index) const
 {
@@ -384,7 +384,7 @@ Cloud::getObjectSpacePoint (unsigned int index) const
 
   return (pt);
 }
-
+//得到
 Point3D
 Cloud::getDisplaySpacePoint (unsigned int index) const
 {
