@@ -53,7 +53,7 @@
 #include <QToolBar>
 #include <pcl/apps/point_cloud_editor/localTypes.h>
 #include <QLayout>
-
+#include <QCloseEvent>
 // Forward declaration to prevent circular inclusion
 class CloudEditorWidget;
 
@@ -106,9 +106,14 @@ class MainWindow : public QMainWindow
     void SetPoint1Label(QString str);
     void SetPoint2Label(QString str);
     void SetPointResultLabel(QString str);
-    QLabel *point1label;
-    QLabel *point2label;
-    QLabel *result;
+    QLabel *point1label=NULL;
+    QLabel *point2label=NULL;
+    QLabel *result=NULL;
+    QDialog *rangeWindow=NULL;
+    QVBoxLayout *layout=NULL;
+
+    void closeEvent(QCloseEvent *event);
+
 
   private Q_SLOTS:
     void
@@ -127,8 +132,6 @@ class MainWindow : public QMainWindow
     /// menus, actions, etc.
     void
     initWindow ();
-
-
     
     /// create actions which are connected to file menus
     void 
@@ -249,8 +252,6 @@ class MainWindow : public QMainWindow
     /// the help menu
     QMenu *help_menu_;
 
-    QDialog *rangeWindow;
-    QVBoxLayout *layout;
     /// the spin box for adjusting point size.
     QSpinBox *point_size_spin_box_;
 

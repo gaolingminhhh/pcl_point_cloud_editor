@@ -17,13 +17,12 @@ DisplayDepthValue::getDepthValue(int x, int y,const QPointF screen_pos,boost::sh
 {
     Point3D point;
     if(convert->getDepthValue(x,y,point)){
-       qDebug("深度值:%f",point.z);
+        qDebug("深度值:%f",point.z);
         QString str("深度值:");
         str.append(QString::number(point.z));
         QToolTip::showText(screen_pos.toPoint(),str);
-       // convert->Test(point);
-
-}
+        // convert->Test(point);
+    }
     else
     {
         qDebug("没选中任何点");

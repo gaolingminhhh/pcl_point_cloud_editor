@@ -74,7 +74,7 @@ Converter::getDepthValue(int x, int y,Point3D& point)
     Point3D pt = ptsvec[i];
     if (isRightPoint(pt, project, viewport))
     {
-        highlight->highlightsinglepoint(i);
+       // highlight->highlightsinglepoint(i);
         point=cloud_ptr_->getInternalCloud()[i];//****请记住 只有这个是能找到正确的点云的点的路径,其他的都不好使
       //  Test(pt);
 

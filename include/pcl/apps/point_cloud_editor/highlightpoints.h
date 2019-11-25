@@ -13,11 +13,11 @@ private:
     SelectionPtr selection_ptr_;
     CloudPtr cloud_ptr;
     IndexVector indicies;
-    int dislightpointindex;
-
-
-private slots:
+    int dislightpointindex1;
+    int dislightpointindex2;
+    int count=0;
     void dishighlight();
+    bool isInIndecies(int num);
 
 public:
     HightLightPoints(CloudPtr cloudptr,SelectionPtr selection_ptr);

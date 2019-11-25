@@ -4,7 +4,6 @@
 #include <pcl/apps/point_cloud_editor/toolInterface.h>
 #include <pcl/apps/point_cloud_editor/localTypes.h>
 #include <pcl/apps/point_cloud_editor/screenpointconverter.h>
-#include <pcl/apps/point_cloud_editor/rangingdialog.h>
 #include <QDialog>
 #include <QPushButton>
 #include <QLayout>

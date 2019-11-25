@@ -74,7 +74,7 @@ CloudEditorWidget::CloudEditorWidget (QWidget *parent)
     : QGLWidget(QGLFormat(QGL::DoubleBuffer | QGL::DepthBuffer |
                           QGL::Rgba | QGL::StencilBuffer), parent),
     //  QOpenGLWidget(parent),
-      point_size_(2.0f), selected_point_size_(4.0f),
+      point_size_(2.0f), selected_point_size_(10.0f),
     cam_fov_(60.0), cam_aspect_(1.0), cam_near_(0.0001), cam_far_(100.0),
     color_scheme_(COLOR_BY_PURE), is_colored_(false)
 {
@@ -105,7 +105,7 @@ void
 CloudEditorWidget::load ()
 {
   QString file_path = QFileDialog::getOpenFileName(this, tr("Open File"));
-    
+
   if (file_path.isEmpty())
     return;
 
@@ -133,7 +133,7 @@ CloudEditorWidget::save ()
   }
 
   QString file_path = QFileDialog::getSaveFileName(this,tr("Save point cloud"));
-  
+
   std::string file_path_std = file_path.toStdString();
   if ( (file_path_std.empty()) || (!cloud_ptr_) )
     return;
@@ -360,7 +360,7 @@ CloudEditorWidget::denoise ()
   // check for cancel.
   if (!form.ok())
   {
-	  return;
+      return;
   }
   boost::shared_ptr<DenoiseCommand> c(new DenoiseCommand(selection_ptr_,
     cloud_ptr_, form.getMeanK(), form.getStdDevThresh()));
@@ -597,6 +597,7 @@ CloudEditorWidget::mouseReleaseEvent (QMouseEvent *event)
   {
       highlight->hightlight();
   }
+  ((MainWindow*)parentWidget())->update();
   displaytag();
   update();
 }
@@ -624,7 +625,7 @@ CloudEditorWidget::keyPressEvent (QKeyEvent *event)
 
 void
 CloudEditorWidget::loadFilePCD(const std::string &filename)
-{   
+{
   PclCloudPtr pcl_cloud_ptr;
   Cloud3D tmp;
   if (pcl::io::loadPCDFile<Point3D>(filename, tmp) == -1)
@@ -740,7 +741,7 @@ CloudEditorWidget::swapRBValues ()
 
 void
 CloudEditorWidget::initKeyMap ()
-{   
+{
   key_map_[Qt::Key_1] = &CloudEditorWidget::colorByPure;
   key_map_[Qt::Key_2] = &CloudEditorWidget::colorByX;
   key_map_[Qt::Key_3] = &CloudEditorWidget::colorByY;

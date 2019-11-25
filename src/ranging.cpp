@@ -33,6 +33,7 @@ Ranging::getPoint3D(int x, int y,const QPointF screen_pos,boost::shared_ptr<Conv
             point1str.append(str2);
            // setHighlightColor(point1);
             ((MainWindow*)widget)->SetPoint1Label(point1str);
+
         }
         else
         {
@@ -74,13 +75,18 @@ qDebug("%f %f %f %f %f %f",point1.x,point1.y,point1.z,point2.x,point2.y,point2.z
  distance=sqrt(disx*disx+disy*disy+disz*disz);
 qDebug("distance : %f",distance);
 return sqrt(disx*disx+disy*disy+disz*disz);
-
 }
 
 void
 Ranging::onMouseReleased(int x,int y,const QPointF screen_pos,boost::shared_ptr<Converter> converter,QWidget *widget)
 {
-    //如果没有移动位置
+    qDebug("鼠标松开");
+    if(((MainWindow*)widget)->rangeWindow==NULL)
+    {
+        qDebug("未创建窗口");
+        return;
+    }    //如果没有移动位置
+    qDebug("判断失败");
     if(final_x==x&&final_y==y)
     {
         getPoint3D(x,y,screen_pos,converter,widget);

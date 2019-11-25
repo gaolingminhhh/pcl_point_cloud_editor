@@ -66,8 +66,15 @@ void
 MainWindow::SetPoint1Label(QString str)
 {
     point1label->setText(str);
-    qDebug("显示1");
+    point2label->clear();
+    result->clear();
 
+}
+
+void
+MainWindow::closeEvent(QCloseEvent *event)
+{
+    rangeWindow->close();
 }
 
 void MainWindow::SetPoint2Label(QString str)
@@ -156,7 +163,7 @@ MainWindow::initWindow ()
   createToolBars();
   setWindowTitle(tr("PCL 3D 编辑器"));
   resize(window_width_, window_height_);
-createRangeWindow();
+//createRangeWindow();
 // InitLabels();
 }
 
@@ -453,8 +460,10 @@ MainWindow::createSliders ()
 void
 MainWindow::createRangeWindow()
 {
-    rangeWindow=new QDialog(this);
+    rangeWindow=new QDialog();
     rangeWindow->setAttribute(Qt::WA_DeleteOnClose);
+    Qt::WindowFlags flags = rangeWindow->windowFlags();
+    rangeWindow->setWindowFlags(flags | Qt::WindowStaysOnTopHint);
     rangeWindow->setWindowTitle("测距");
    rangeWindow->setGeometry(geometry().right(),100,200,100);
     layout=new QVBoxLayout();
@@ -462,6 +471,7 @@ MainWindow::createRangeWindow()
     point2label=new QLabel("第二个点(0,0,0)");
     result=new QLabel("距离为:0");
 
+    qDebug("初始化完毕");
     point1label->setAttribute(Qt::WA_DeleteOnClose);
     point2label->setAttribute(Qt::WA_DeleteOnClose);
     result->setAttribute(Qt::WA_DeleteOnClose);
@@ -470,5 +480,4 @@ MainWindow::createRangeWindow()
     layout->addWidget(result);
     rangeWindow->setLayout(layout);
     rangeWindow->show();
-    rangeWindow->raise();
 }
