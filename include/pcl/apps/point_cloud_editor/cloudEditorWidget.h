@@ -49,21 +49,21 @@
 #include <pcl/apps/point_cloud_editor/displayDepthValue.h>
 #include <pcl/apps/point_cloud_editor/screenpointconverter.h>
 #include <pcl/apps/point_cloud_editor/ranging.h>
-#include <pcl/apps/point_cloud_editor/rangingdialog.h>
 #include <pcl/apps/point_cloud_editor/highlightpoints.h>
 #include <vector>
 #include <QMainWindow>
 #include <QGLWidget>
 #include <QLabel>
-
 #include <functional>
+#include <QPainter>
+#include <QPaintEvent>
 
 /// @brief class declaration for the widget for editing and viewing
 /// point clouds.
 class CloudEditorWidget : public QGLWidget
 {
-  Q_OBJECT
-  public:
+    Q_OBJECT
+public:
     /// @brief Constructor
     /// @param parent a pointer which points to the parent widget
     CloudEditorWidget (QWidget *parent = nullptr);
@@ -87,7 +87,7 @@ class CloudEditorWidget : public QGLWidget
     void
     displaytag();
 
-  public Q_SLOTS:
+public Q_SLOTS:
     /// @brief Loads a new cloud.
     void
     load ();
@@ -99,7 +99,6 @@ class CloudEditorWidget : public QGLWidget
     //鼠标停止事件
     void
     onMouseStopMove();
-
 
     /// @brief Toggles the blend mode used to render the non-selected points
     void
@@ -216,16 +215,16 @@ class CloudEditorWidget : public QGLWidget
 
     void
     hidetag();
-//    void
-//    displayZValueTag();
+    //    void
+    //    displayZValueTag();
 
-//    void
-//    createLabel();
+    //    void
+    //    createLabel();
 
-//    void
-//    updateLabels();
+    //    void
+    //    updateLabels();
 
-  protected:  
+protected:
     /// initializes GL
     void
     initializeGL () override;
@@ -250,9 +249,6 @@ class CloudEditorWidget : public QGLWidget
     void
     mouseReleaseEvent (QMouseEvent *event) override;
 
-
-
-
     /// key press control
     void
     keyPressEvent (QKeyEvent *event) override;
@@ -260,7 +256,7 @@ class CloudEditorWidget : public QGLWidget
     QTimer mTimer;
 
 
-  private:
+private:
     
     /// @brief Attempts to load a pcd file
     /// @param filename The name of the pcd file to be loaded.
@@ -288,13 +284,13 @@ class CloudEditorWidget : public QGLWidget
 
     struct ExtCompare
     {
-      bool
-      operator()(std::string lhs, std::string rhs) const
-      {
-        stringToLower(lhs);
-        stringToLower(rhs);
-        return lhs.compare(rhs) < 0;
-      }
+        bool
+        operator()(std::string lhs, std::string rhs) const
+        {
+            stringToLower(lhs);
+            stringToLower(rhs);
+            return lhs.compare(rhs) < 0;
+        }
     };
 
     using FileLoadFunc = std::function<void (CloudEditorWidget*, const std::string&)>;
@@ -328,9 +324,6 @@ class CloudEditorWidget : public QGLWidget
     boost::shared_ptr<DisplayDepthValue> displayDepthValue;
 
     boost::shared_ptr<Ranging> ranging;
-
-    boost::shared_ptr<RangingDialog> rangingDialog;
-
 
     boost::shared_ptr<Converter> converter;
 
