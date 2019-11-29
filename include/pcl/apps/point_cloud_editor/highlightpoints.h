@@ -13,10 +13,6 @@ private:
     SelectionPtr selection_ptr_;
     CloudPtr cloud_ptr;
     IndexVector indicies;
-    int dislightpointindex1;
-    int dislightpointindex2;
-    int count=0;
-    void dishighlight();
     bool isInIndecies(int num);
 
 public:
@@ -24,6 +20,8 @@ public:
     void getIndicies(IndexVector &index);
     void randomvertex();//计算index
     void hightlight();
+    void dishighlight(int i);
+    void dishighlight(IndexVector removeIndicies);
     void highlightsinglepoint(int index);
 
 };
