@@ -15,6 +15,7 @@ public:
     bool isRightPoint(const Point3D& pt,const GLfloat* project,const GLint *viewport) const;
     //得到深度值
     bool getDepthValue(int x, int y,Point3D& point);
+    bool getDepthValue(int x, int y,Point3D& point,int& index);
 
     QPoint getScreenPosValue(Point3D pt);
 

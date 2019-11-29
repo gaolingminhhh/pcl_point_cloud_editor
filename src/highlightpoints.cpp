@@ -35,41 +35,29 @@ HightLightPoints::hightlight()
 }
 
 void
-HightLightPoints::dishighlight()
+HightLightPoints::dishighlight(int i)
 {
-    if(!isInIndecies(dislightpointindex1)){
-        selection_ptr_->removeIndex(dislightpointindex1);
-    }
-    if(!isInIndecies(dislightpointindex2)){
-        selection_ptr_->removeIndex(dislightpointindex2);
-    }
+        selection_ptr_->removeIndex(i);
 }
+
+//void
+//HightLightPoints::dishighlight(std::vector<int> removeIndicies)
+//{
+//    foreach (var i, removeIndicies) {
+//        dishighlight(i);
+//    }
+//}
 
 void
 HightLightPoints::highlightsinglepoint(int index)
 {
-    if(count==2)
-    {
-        dishighlight();
-        count=0;
-    }
-    if(count==0)
-    {
-        dislightpointindex1=index;
-    }
-    if(count==1)
-    {
-        dislightpointindex2=index;
-        //画直线
-    }
     selection_ptr_->addIndex(index);
-    count++;
 }
 
 bool
 HightLightPoints::isInIndecies(int num)
 {
-    if(std::find(indicies.begin(),indicies.end(),num)==indicies.end());
+    if(std::find(selection_ptr_->begin(),selection_ptr_->end(),num)==selection_ptr_->end());
         return false;
     return true;
 }

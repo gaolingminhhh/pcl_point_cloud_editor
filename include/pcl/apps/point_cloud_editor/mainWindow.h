@@ -54,6 +54,7 @@
 #include <pcl/apps/point_cloud_editor/localTypes.h>
 #include <QLayout>
 #include <QCloseEvent>
+#include <pcl/apps/point_cloud_editor/ranging.h>
 // Forward declaration to prevent circular inclusion
 class CloudEditorWidget;
 
@@ -102,16 +103,15 @@ class MainWindow : public QMainWindow
 
     void
     initTimer();
+    boost::shared_ptr<Ranging> ranging;
 
-    void SetPoint1Label(QString str);
-    void SetPoint2Label(QString str);
-    void SetPointResultLabel(QString str);
-    QLabel *point1label=NULL;
-    QLabel *point2label=NULL;
-    QLabel *result=NULL;
+    void SetPerimeter(QString str);
+    void SetArea(QString str);
+    QLabel *areaLabel=NULL;
+    QLabel *perimeterLabel=NULL;
+    QPushButton *resetButton=NULL;
     QDialog *rangeWindow=NULL;
     QVBoxLayout *layout=NULL;
-
     void closeEvent(QCloseEvent *event);
 
 
@@ -126,6 +126,8 @@ class MainWindow : public QMainWindow
     display_z_value_fun();
     void
     createRangeWindow();
+
+    void ResetFunction();
 
   private:
     /// Initialization function.  This handles the initialization of the widget,

@@ -63,12 +63,10 @@ MainWindow::~MainWindow()
 }
 
 void
-MainWindow::SetPoint1Label(QString str)
+MainWindow::SetArea(QString str)
 {
-    point1label->setText(str);
-    point2label->clear();
-    result->clear();
-
+    areaLabel->setText(str);
+    perimeterLabel->clear();
 }
 
 void
@@ -77,15 +75,17 @@ MainWindow::closeEvent(QCloseEvent *event)
     rangeWindow->close();
 }
 
-void MainWindow::SetPoint2Label(QString str)
+void MainWindow::SetPerimeter(QString str)
 {
-    point2label->setText(str);
-    qDebug("显示2");
+    perimeterLabel->setText(str);
 }
 
-void MainWindow::SetPointResultLabel(QString str)
+void MainWindow::ResetFunction()
 {
-    result->setText(str);
+    qDebug("执行重置");
+    perimeterLabel->clear();
+    areaLabel->clear();
+    ranging->reset();
 }
 
 void
@@ -163,7 +163,7 @@ MainWindow::initWindow ()
   createToolBars();
   setWindowTitle(tr("PCL 3D 编辑器"));
   resize(window_width_, window_height_);
-//createRangeWindow();
+  createRangeWindow();
 // InitLabels();
 }
 
@@ -467,17 +467,16 @@ MainWindow::createRangeWindow()
     rangeWindow->setWindowTitle("测距");
    rangeWindow->setGeometry(geometry().right(),100,200,100);
     layout=new QVBoxLayout();
-    point1label=new QLabel("第一个点:(0,0,0)");
-    point2label=new QLabel("第二个点(0,0,0)");
-    result=new QLabel("距离为:0");
-
+    perimeterLabel=new QLabel("周长:0");
+    areaLabel=new QLabel("面积:0");
+    resetButton=new QPushButton("重置");
+    connect(resetButton,SIGNAL(released()),this,SLOT(ResetFunction()));
     qDebug("初始化完毕");
-    point1label->setAttribute(Qt::WA_DeleteOnClose);
-    point2label->setAttribute(Qt::WA_DeleteOnClose);
-    result->setAttribute(Qt::WA_DeleteOnClose);
-    layout->addWidget(point1label);
-    layout->addWidget(point2label);
-    layout->addWidget(result);
+    perimeterLabel->setAttribute(Qt::WA_DeleteOnClose);
+    areaLabel->setAttribute(Qt::WA_DeleteOnClose);
+    layout->addWidget(perimeterLabel);
+    layout->addWidget(areaLabel);
+    layout->addWidget(resetButton);
     rangeWindow->setLayout(layout);
     rangeWindow->show();
 }

@@ -591,7 +591,8 @@ CloudEditorWidget::mouseReleaseEvent (QMouseEvent *event)
   //displayZValueTag();
   if(ranging)
   {
-      ranging->onMouseReleased(event->x(),event->y(),event->screenPos(),converter,parentWidget());
+      ranging->onMouseReleased(event->x(),event->y(),event->screenPos(),parentWidget());
+      qDebug("x:%d, y%d, screenpos(%d,%d)",event->x(),event->y(),event->screenPos().x(),event->screenPos().y());
   }
   if(highlight)
   {
@@ -643,7 +644,8 @@ CloudEditorWidget::loadFilePCD(const std::string &filename)
   tool_ptr_ =
     boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud_ptr_));
   converter=boost::shared_ptr<Converter>(new Converter(cloud_ptr_,highlight));
-  ranging=boost::shared_ptr<Ranging>(new Ranging());
+  ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
+  ((MainWindow*)parentWidget())->ranging=ranging;
   if (isColored(filename))
   {
     swapRBValues();
