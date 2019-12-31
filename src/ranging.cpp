@@ -18,7 +18,7 @@ Ranging::Ranging(boost::shared_ptr<Converter> converter,CloudPtr cloud_ptr_,boos
     this->converter=converter;
     this->cloud_ptr_=cloud_ptr_;
     this->highLighter=highLighter;
-    calculateobb();
+   // calculateobb();
     xozNormal=calculateNormal(x_axis,z_axis,center);
     yozNormal=calculateNormal(y_axis,z_axis,center);
     xoyNormal=calculateNormal(x_axis,y_axis,center);
@@ -50,21 +50,18 @@ Ranging::countTriangleArea(Point a, Point b, Point c)
 }
 
 void
-Ranging::getPoint3D(int x, int y,QPointF screen_pos,QWidget *widget)
+Ranging::getPoint3D(int x, int y)
 {
-    qDebug("getPoint3D");
     Point3D point;
     int index=0;
     if(converter->getDepthValue(x,y,point,index))
     {
         points.push_back(Point(point.x,point.y,point.z));
-        screenPositions.push_back(screen_pos);
-        qDebug("index : %d",index);
+        screenPositions.push_back(QPoint(x,y));
         indicies.push_back(index);
         highLight(index);
         times++;
     }
-    qDebug("getPoint3D Finished");
 
 }
 
@@ -77,7 +74,6 @@ Ranging::highLight(int index)
 void
 Ranging::reset()
 {
-    qDebug("在ranging中重置");
     for (int i=0;i<times;i++) {
         highLighter->dishighlight(indicies[i]);
     }
@@ -89,7 +85,7 @@ Ranging::reset()
     xozArea=0;
     yozArea=0;
     perimeter=0;
-
+    lines.clear();
 }
 
 float
@@ -98,24 +94,21 @@ Ranging::getDistance(Point point1, Point point2)
     float disx=std::abs(point1.x-point2.x);
     float disy=std::abs(point1.y-point2.y);
     float disz=std::abs(point1.z-point2.z);
-    qDebug("%f %f %f %f %f %f",point1.x,point1.y,point1.z,point2.x,point2.y,point2.z);
 
     float distance=sqrt(disx*disx+disy*disy+disz*disz);
-    qDebug("distance : %f",distance);
     return distance;
 }
 
 void
-Ranging::onMouseReleased(int x,int y,const QPointF screen_pos,QWidget *widget)
+Ranging::end(int x, int y, BitMask modifiers, BitMask buttons)
 {
-    getPoint3D(x,y,screen_pos,widget);
+    if(x!=mouse_x||y!=mouse_y)
+        return;
+    getPoint3D(x,y);
     update();
-    qDebug("鼠标释放事件");
-    QString perimeterstr("周长:");
-    QString areaStr("面积:");
-    if(times>=3)
-        ((MainWindow*)widget)->SetArea(areaStr.append(QString::number(xoyArea)));
-    ((MainWindow*)widget)->SetPerimeter(perimeterstr.append(QString::number(perimeter)));
+    //    if(times>=3)
+    //        ((MainWindow*)widget)->SetArea(areaStr.append(QString::number(xoyArea)));
+    //    ((MainWindow*)widget)->SetPerimeter(perimeterstr.append(QString::number(perimeter)));
 }
 
 void
@@ -126,22 +119,28 @@ Ranging::undo()
     update();
 }
 
-void Ranging::onMousePressed(int x,int y)
+void Ranging::start(int x, int y, BitMask modifiers, BitMask buttons)
 {
+    mouse_x=x;
+    mouse_y=y;
 }
 
 void
-Ranging::drawLine(QPointF point1, QPointF point2)
+Ranging::drawLine(QPoint point1, QPoint point2)
 {
-    //TODO 画出线
-    qDebug("画线");
+    QLine line(point1.x(),point1.y(),point2.x(),point2.y());
+    lines.append(line);
+}
+
+QList<QLine>
+Ranging::getLines() const
+{
+    return lines;
 }
 
 void
 Ranging::calculateArea()
 {
-    qDebug("计算面积");
-    qDebug("times=%d",times);
     xozArea=0;
     yozArea=0;
     xoyArea=0;
@@ -149,30 +148,22 @@ Ranging::calculateArea()
     if(times<=2)
         return;
     Point center_(center.x,center.y,center.z);
-
-    qDebug("points size=%d",points.size());
     xozPlane.clear();
     yozPlane.clear();
     xoyPlane.clear();
-    for(int i=0;i<points.size();i++)
+    for(unsigned int i=0;i<points.size();i++)
     {
-        qDebug("i=%d",i);
-        qDebug("points %f %f %f",points[i].x,points[i].y,points[i].z);
-        qDebug("xoznormal %f %f %f",xozNormal.x,xozNormal.y,xozNormal.z);
-        qDebug("center_ %f %f %f",center_.x,center_.y,center_.z);
         xozPlane.push_back(getProjectPoint(xozNormal,center_,points[i]));
         xoyPlane.push_back(getProjectPoint(xoyNormal,center_,points[i]));
         yozPlane.push_back(getProjectPoint(yozNormal,center_,points[i]));
     }
-    for(int i=0;i<points.size();i++)
+    for(unsigned int i=0;i<points.size();i++)
     {
         xozArea+=countTriangleArea(xozPlane[i],xozPlane[(i+1)%points.size()],center_);
         xoyArea+=countTriangleArea(xoyPlane[i],xoyPlane[(i+1)%points.size()],center_);
         yozArea+=countTriangleArea(yozPlane[i],yozPlane[(i+1)%points.size()],center_);
     }
-    qDebug("xoz方向: %f ",xozArea);
-    qDebug("yoz方向: %f ",yozArea);
-    qDebug("xoy方向: %f ",xoyArea);
+    area=xozArea;
 }
 
 void
@@ -182,7 +173,7 @@ Ranging::drawLines()
         return;
     if(isClosed)
     {
-        for(int i=0;i<screenPositions.size()-2;i++)
+        for(unsigned int i=0;i<screenPositions.size()-2;i++)
         {
             drawLine(screenPositions[i],screenPositions[i+1]);
         }
@@ -190,7 +181,7 @@ Ranging::drawLines()
     }
     else
     {
-        for(int i=0;i<screenPositions.size()-1;i++)
+        for(unsigned int i=0;i<screenPositions.size()-1;i++)
         {
             drawLine(screenPositions[i],screenPositions[i+1]);
         }
@@ -203,14 +194,14 @@ Ranging::calculatePerimeter()
     perimeter=0;
     if(isClosed)
     {
-        for(int i=0;i<points.size();i++)
+        for(unsigned int i=0;i<points.size();i++)
         {
             perimeter+=getDistance(points[i%points.size()],points[(i+1)%points.size()]);
         }
     }
     else
     {
-        for(int i=0;i<points.size()-1;i++)
+        for(unsigned int i=0;i<points.size()-1;i++)
         {
             perimeter+= getDistance(points[i],points[i+1]);
         }
@@ -222,6 +213,8 @@ Ranging::calculatePerimeter()
 void
 Ranging::update()
 {
+    if(times<=0)
+        return;
     calculateArea();
     calculatePerimeter();
     drawLines();
@@ -230,47 +223,29 @@ Ranging::update()
 void
 Ranging::calculateobb()
 {
-    pcl::MomentOfInertiaEstimation <pcl::PointXYZ> feature_extractor;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-//    for(int i=0;i<cloud_ptr_->getInternalCloud().size();i++)
-//    {
-//        pcl::PointXYZ point;
-//        point.x=cloud_ptr_->getInternalCloud()[i].x;
-//        point.y=cloud_ptr_->getInternalCloud()[i].y;
-//        point.z=cloud_ptr_->getInternalCloud()[i].z;
-//        cloud->points.push_back(point);
-//    }
-    qDebug("创造包围盒完毕");
+    pcl::MomentOfInertiaEstimation <pcl::PointXYZRGBA> feature_extractor;
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBA>);
+    for(unsigned int i=0;i<cloud_ptr_->getInternalCloud().size();i++)
+    {
+        cloud->push_back(cloud_ptr_->getInternalCloud()[i]);
+    }
     feature_extractor.setInputCloud (cloud);
-    qDebug("mass");
-    qDebug("mass1");
-    qDebug("mass2");
-    feature_extractor.compute ();
-    qDebug("计算");
-
-    std::vector <float> moment_of_inertia;
-    std::vector <float> eccentricity;
-    pcl::PointXYZ min_point_OBB;
-    pcl::PointXYZ max_point_OBB;
-    pcl::PointXYZ position_OBB;
+    feature_extractor.compute();
+    qDebug("输入包围盒");
+    qDebug("计算特征");
+    pcl::PointXYZRGBA min_point_OBB;
+    pcl::PointXYZRGBA max_point_OBB;
+    pcl::PointXYZRGBA position_OBB;
     Eigen::Matrix3f rotational_matrix_OBB;
-    float major_value, middle_value, minor_value;
     Eigen::Vector3f major_vector, middle_vector, minor_vector;
     Eigen::Vector3f mass_center;
-    feature_extractor.getMomentOfInertia (moment_of_inertia);
-    feature_extractor.getEccentricity (eccentricity);
     feature_extractor.getOBB (min_point_OBB, max_point_OBB, position_OBB, rotational_matrix_OBB);
-    feature_extractor.getEigenValues (major_value, middle_value, minor_value);
     feature_extractor.getEigenVectors (major_vector, middle_vector, minor_vector);
     feature_extractor.getMassCenter (mass_center);
-    Eigen::Vector3f position (position_OBB.x, position_OBB.y, position_OBB.z);
-    Eigen::Quaternionf quat (rotational_matrix_OBB);
-    (mass_center (0), mass_center (1), mass_center (2));
     center= Point(mass_center (0), mass_center (1), mass_center (2));
     x_axis =Point(major_vector (0) + mass_center (0), major_vector (1) + mass_center (1), major_vector (2) + mass_center (2));
     y_axis=Point(middle_vector (0) + mass_center (0), middle_vector (1) + mass_center (1), middle_vector (2) + mass_center (2));
     z_axis=Point(minor_vector (0) + mass_center (0), minor_vector (1) + mass_center (1), minor_vector (2) + mass_center (2));
-    qDebug("??????");
 }
 
 Point
@@ -299,13 +274,11 @@ Ranging::calculateCrossProduct(Point p1, Point p2)
 Point
 Ranging::getProjectPoint(Point normal, Point original, Point p)
 {
-    qDebug("计算面积");
     float t=((normal.x*original.x+normal.y*original.y+normal.z*original.z)-(normal.x*p.x+normal.y*p.y+normal.z*p.z))/(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
     Point projectionPoint;
     projectionPoint.x= p.x+normal.x*t;
     projectionPoint.y= p.y+normal.y*t;
     projectionPoint.z= p.z+normal.z*t;
-    qDebug("映射位置 %f %f %f",projectionPoint.x,projectionPoint.y,projectionPoint.z);
     return projectionPoint;
 }
 
@@ -315,6 +288,43 @@ Ranging::whichPlane()//只有当图形闭合的时候才判断在哪个平面上
     if(!isClosed)
         return;
     //TODO:计算面积,并确定在哪个平面上.
-    qDebug("rangingwhichplane TODO");
+}
+
+void
+Ranging::update(int x, int y, BitMask modifiers, BitMask buttons)
+{}
+
+void
+Ranging::draw() const
+{
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    glColor3f(0.0,
+              1.0,
+              0.0);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    {
+        glLoadIdentity();
+        glOrtho(0, viewport[2], viewport[3], 0, -1, 1);
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        {
+            glLoadIdentity();
+            glBegin(GL_LINES);
+            {
+                for(int i=0;i<lines.size();i++){
+
+                    glVertex2d(lines[i].p1().x(),lines[i].p1().y());
+                    glVertex2d(lines[i].p2().x(),lines[i].p2().y()); }
+            }
+            glEnd();
+        }
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
+    }
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    //update();
 }
 

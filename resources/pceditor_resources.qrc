@@ -17,5 +17,10 @@
         <file>pceditor.icns</file>
         <file>缩放大.png</file>
         <file>移动.png</file>
+        <file>ranging.png</file>
+        <file>giphy.gif</file>
+        <file>extracting.png</file>
+        <file>保存.png</file>
+        <file>compare.png</file>
     </qresource>
 </RCC>

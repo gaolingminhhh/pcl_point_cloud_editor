@@ -57,6 +57,10 @@
 #include <functional>
 #include <QPainter>
 #include <QPaintEvent>
+#include <pcl/apps/point_cloud_editor/octreesearch.h>
+#include <QLine>
+#include <QList>
+#include <pcl/apps/point_cloud_editor/interactive_panel.h>
 
 /// @brief class declaration for the widget for editing and viewing
 /// point clouds.
@@ -84,9 +88,6 @@ public:
     void
     displayZValue(bool isChecked);
 
-    void
-    displaytag();
-
 public Q_SLOTS:
     /// @brief Loads a new cloud.
     void
@@ -96,6 +97,11 @@ public Q_SLOTS:
     void
     save ();
 
+    void
+    save(const Cloud3D &cloud);
+
+    void
+    saveFiles(const Cloud3D &cloud);
     //鼠标停止事件
     void
     onMouseStopMove();
@@ -119,6 +125,22 @@ public Q_SLOTS:
     /// @brief Enters 3D selection mode.
     void
     select3D ();
+
+    ///@brief保存抽取数据
+    void
+    saveExtractingFile();
+
+    ///配准
+    void
+    interatact();
+
+//    ///@brief 显示配准的面板
+//    void
+//    showInteractivePanel();
+
+    ///@brief 测距
+    void
+    range();
 
     /// @brief Inverts the current selection.
     void
@@ -214,7 +236,11 @@ public Q_SLOTS:
     zoom();
 
     void
-    hidetag();
+    showGif();
+
+    void
+    extracting();
+
     //    void
     //    displayZValueTag();
 
@@ -275,13 +301,26 @@ private:
 
     /// @brief swap the values of r and b in each point of the cloud.
     void
-    swapRBValues ();
+    swapRBValues (CloudPtr cloud_ptr_);
 
+    void
+    swapRBValues(Cloud3D *cloud);
     /// @brief initializes the map between key press events and the
     /// corresponding functors.
     void
     initKeyMap();
 
+    void
+    ChangeText();
+
+    void
+    drawLine();
+
+    void
+    createPanel();
+
+    void
+    ShowAreaAndPerimeter();
     struct ExtCompare
     {
         bool
@@ -292,6 +331,7 @@ private:
             return lhs.compare(rhs) < 0;
         }
     };
+    QList<QLine> lines;
 
     using FileLoadFunc = std::function<void (CloudEditorWidget*, const std::string&)>;
     using FileLoadMap = std::map<std::string, FileLoadFunc, ExtCompare>;
@@ -302,6 +342,7 @@ private:
     /// a pointer to the cloud being edited.
     CloudPtr cloud_ptr_;
 
+
     /// The display size, in pixels, of the cloud points
     unsigned int point_size_;
 
@@ -311,6 +352,8 @@ private:
     /// The transformation tool being used. Either a cloud transform tool or
     /// a selection transform tool is activated at a time.
     boost::shared_ptr<ToolInterface> tool_ptr_;
+
+    boost::shared_ptr<ToolInterface> tool_ptr_temp;
 
     /// a pointer to the selection object
     SelectionPtr selection_ptr_;
@@ -324,6 +367,8 @@ private:
     boost::shared_ptr<DisplayDepthValue> displayDepthValue;
 
     boost::shared_ptr<Ranging> ranging;
+
+    boost::shared_ptr<OctreeSearch> octreesearch;
 
     boost::shared_ptr<Converter> converter;
 
@@ -350,6 +395,8 @@ private:
     /// A flag indicates whether the cloud is initially colored or not.
     bool is_colored_;
 
+    bool isdisplaychecked=false;
+    bool isbuttonchecked=false;
     using KeyMapFunc = std::function<void (CloudEditorWidget*)>;
 
     /// map between pressed key and the corresponding functor
@@ -358,11 +405,10 @@ private:
     /// a dialog displaying the statistics of the cloud editor
     StatisticsDialog stat_dialog_;
 
+    Interactive_Panel *panel;
+
+
     int stop_x;
     int stop_y;
     QPointF screen_pos;
-    std::vector<QPointF> screen_points;
-    IndexVector index;
-    int count=0;
-    QLabel *label[];
 };

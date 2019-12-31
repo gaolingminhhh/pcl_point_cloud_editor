@@ -103,16 +103,6 @@ class MainWindow : public QMainWindow
 
     void
     initTimer();
-    boost::shared_ptr<Ranging> ranging;
-
-    void SetPerimeter(QString str);
-    void SetArea(QString str);
-    QLabel *areaLabel=NULL;
-    QLabel *perimeterLabel=NULL;
-    QPushButton *resetButton=NULL;
-    QDialog *rangeWindow=NULL;
-    QVBoxLayout *layout=NULL;
-    void closeEvent(QCloseEvent *event);
 
 
   private Q_SLOTS:
@@ -124,10 +114,7 @@ class MainWindow : public QMainWindow
 
     void
     display_z_value_fun();
-    void
-    createRangeWindow();
 
-    void ResetFunction();
 
   private:
     /// Initialization function.  This handles the initialization of the widget,
@@ -173,14 +160,14 @@ class MainWindow : public QMainWindow
     /// action for saving file
     QAction *save_action_;
 
-    /// action for copying selected points
-    QAction *copy_action_;
+//    /// action for copying selected points
+//    QAction *copy_action_;
 
-    /// action for pasting copied points
-    QAction *paste_action_;
+//    /// action for pasting copied points
+//    QAction *paste_action_;
 
-    /// action for cutting selected points
-    QAction *cut_action_;
+//    /// action for cutting selected points
+//    QAction *cut_action_;
 
     /// action for deleting selected points
     QAction *delete_action_;
@@ -200,8 +187,8 @@ class MainWindow : public QMainWindow
     /// action for undo
     QAction *undo_action_;
 
-    /// action for point selection
-    QAction *select_action_;
+//    /// action for point selection
+//    QAction *select_action_;
 
     /// action for 2D point selection
     QAction *select_2D_action_;
@@ -224,13 +211,19 @@ class MainWindow : public QMainWindow
     /// action for showing the statistics of the editor
     QAction *show_stat_action_;
 
-    QAction *range;
+
+    ///@brief 配准
+    QAction *interactive;
 
     ///edit by echo
     ///
     QAction *zoom_;
     QAction *move;
     QAction *display_z_value;
+    QAction *ranging_tool;
+    QAction *extracting;
+    ///save extracting file
+    QAction *extracting_save;
     ///end
 
     /// the file menu
@@ -274,7 +267,6 @@ class MainWindow : public QMainWindow
 
     /// the slider used for adjusting moving speed.
      QSlider *move_speed_slider_;
-
 
 
 };

@@ -374,6 +374,9 @@ class Cloud : public Statistics
     const Cloud3D&
     getInternalCloud () const;
 
+    Cloud3D::Ptr
+    getCloud3DPtr() const;
+
     /// @brief Places the points in the copy buffer into the cloud according
     /// to the indices in the selection.
     void
@@ -420,6 +423,8 @@ class Cloud : public Statistics
 
     /// The internal representation of the cloud
     Cloud3D cloud_;
+
+    Cloud3D::Ptr cloud3d_ptr;
 
     /// @brief A weak pointer pointing to the selection object.
     /// @details This implementation uses the weak pointer to allow for a lazy

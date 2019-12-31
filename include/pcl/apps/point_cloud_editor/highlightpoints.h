@@ -18,11 +18,11 @@ private:
 public:
     HightLightPoints(CloudPtr cloudptr,SelectionPtr selection_ptr);
     void getIndicies(IndexVector &index);
-    void randomvertex();//计算index
     void hightlight();
     void dishighlight(int i);
     void dishighlight(IndexVector removeIndicies);
     void highlightsinglepoint(int index);
+    void highlightpoints(IndexVector indicies);
 
 };
 

@@ -75,7 +75,7 @@ CopyBuffer::getStat () const
 {
   if (buffer_.size() == 0)
     return ("");
-  std::string title = "The number of points copied to the clipboard: ";
+  std::string title = "剪切板中点的数量: ";
   std::string num_str;
   ::toString(buffer_.size(), num_str);
   return (title + num_str);

@@ -93,11 +93,6 @@ Select2DTool::end (int x, int y, BitMask modifiers, BitMask)
   IndexVector indices;
   GLfloat project[16];
   glGetFloatv(GL_PROJECTION_MATRIX, project);
-//  for(int i=0;i<12;i+=4)
-//  {
-//      qDebug("%f %f %f %f",project[i],project[i+1],project[i+2],project[i+3]);
-//  }
-  qDebug("%d",GL_PROJECTION_MATRIX);
   Point3DVector ptsvec;
   cloud_ptr_->getDisplaySpacePoints(ptsvec);
   for(std::size_t i = 0; i < ptsvec.size(); ++i)

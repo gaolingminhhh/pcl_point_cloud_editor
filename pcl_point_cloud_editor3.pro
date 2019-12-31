@@ -49,7 +49,10 @@ SOURCES += \
     src/displayDepthValue.cpp \
     src/ranging.cpp \
     src/screenpointconverter.cpp \
-    src/highlightpoints.cpp
+    src/highlightpoints.cpp \
+    src/octreesearch.cpp \
+    src/extracting.cpp \
+    src/interactive_panel.cpp
 
 HEADERS += \
     include/pcl/apps/point_cloud_editor/cloud.h \
@@ -79,7 +82,10 @@ HEADERS += \
     include/pcl/apps/point_cloud_editor/displayDepthValue.h \
     include/pcl/apps/point_cloud_editor/ranging.h \
     include/pcl/apps/point_cloud_editor/screenpointconverter.h \
-    include/pcl/apps/point_cloud_editor/highlightpoints.h
+    include/pcl/apps/point_cloud_editor/highlightpoints.h \
+    include/pcl/apps/point_cloud_editor/octreesearch.h \
+    include/pcl/apps/point_cloud_editor/extracting.h \
+    include/pcl/apps/point_cloud_editor/interactive_panel.h
 
 RESOURCES += \
     resources/pceditor_resources.qrc

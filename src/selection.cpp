@@ -119,7 +119,7 @@ Selection::getStat () const
 {
   if (selected_indices_.empty ())
     return ("");
-  std::string title = "Total number of selected points: ";
+  std::string title = "选中点的数量: ";
   std::string num_str;
   ::toString(selected_indices_.size(), num_str);
   return (title + num_str);

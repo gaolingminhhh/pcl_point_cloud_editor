@@ -33,27 +33,6 @@ Converter::isRightPoint(const Point3D& pt,
 Converter::~Converter()
 {}
 
-
-void
-Converter::Test(Point3D &point)
-{
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT,viewport);
-    GLfloat project[16];
-    //投影矩阵堆栈顶部的投影矩阵
-    glGetFloatv(GL_PROJECTION_MATRIX, project);
-    //开始进行坐标转换
-    float w = point.z * project[11];
-    float x = (point.x* project[0] + point.z* project[8]) / w;
-    float y = (point.y * project[5] + point.z * project[9]) / w;
-    //将屏幕坐标点转换成剪裁空间坐标点(剪裁空间的坐标点为-1~1)
-    //float screen_x = screen_pos_x/(viewport[2]*0.5) - 1.0;
-    //float screen_y = screen_pos_y/(viewport[3]*0.5) - 1.0;
-    float pos_x=(x+1.0)*(viewport[2]*0.5);
-    float pos_y=viewport[3]-(y+1.0)*(viewport[3]*0.5);
-    QToolTip::showText((QPointF(qreal(pos_x),qreal(pos_y))).toPoint(),"test");
-}
-
 //首先应该判断鼠标事件是不是停止
 bool
 Converter::getDepthValue(int x, int y,Point3D& point)
@@ -117,7 +96,6 @@ Converter::getScreenPosValue(Point3D pt)
     GLfloat project[16];
     //投影矩阵堆栈顶部的投影矩阵
     glGetFloatv(GL_PROJECTION_MATRIX, project);
-    glGetFloatv(GL_MODELVIEW, project);
 
     float w = pt.z * project[11];
     float x = (pt.x * project[0] + pt.z* project[8]) / w;

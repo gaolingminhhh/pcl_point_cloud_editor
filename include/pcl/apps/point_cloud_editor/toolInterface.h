@@ -99,12 +99,12 @@ class ToolInterface
     void
     draw () const = 0;
 
+    float perimeter=0;
+    float area=0;
     bool isScale=false;
     bool isMove=false;
     void move(){isScale=false;isMove=true;printf("move");}
     void zoom(){isScale=true;isMove=false;printf("zoom2");}
-
-
   protected:
     /// @brief Default constructor
     ToolInterface ()

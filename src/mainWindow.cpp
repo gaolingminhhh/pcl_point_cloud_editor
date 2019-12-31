@@ -63,32 +63,6 @@ MainWindow::~MainWindow()
 }
 
 void
-MainWindow::SetArea(QString str)
-{
-    areaLabel->setText(str);
-    perimeterLabel->clear();
-}
-
-void
-MainWindow::closeEvent(QCloseEvent *event)
-{
-    rangeWindow->close();
-}
-
-void MainWindow::SetPerimeter(QString str)
-{
-    perimeterLabel->setText(str);
-}
-
-void MainWindow::ResetFunction()
-{
-    qDebug("执行重置");
-    perimeterLabel->clear();
-    areaLabel->clear();
-    ranging->reset();
-}
-
-void
 MainWindow::about ()
 {
   QMessageBox::about(this, QString("点云编辑器"),
@@ -163,8 +137,6 @@ MainWindow::initWindow ()
   createToolBars();
   setWindowTitle(tr("PCL 3D 编辑器"));
   resize(window_width_, window_height_);
-  createRangeWindow();
-// InitLabels();
 }
 
 void
@@ -191,11 +163,11 @@ MainWindow::createActions ()
   help_action_ = new QAction(QString("键盘/鼠标控制"), this);
   connect(help_action_, SIGNAL(triggered()), this, SLOT(help()));
 
-  copy_action_ = new QAction(QIcon(icon_path+"copy.png"), QString("拷贝"),
-                             action_group_);
-  connect(copy_action_, SIGNAL(triggered()), cloud_editor_widget_,
-          SLOT(copy()));
-  copy_action_->setCheckable(false);
+//  copy_action_ = new QAction(QIcon(icon_path+"copy.png"), QString("拷贝"),
+//                             action_group_);
+//  connect(copy_action_, SIGNAL(triggered()), cloud_editor_widget_,
+//          SLOT(copy()));
+//  copy_action_->setCheckable(false);
 
   delete_action_ = new QAction(QIcon(icon_path+"delete.png"), QString("删除"),
                                action_group_);
@@ -203,16 +175,16 @@ MainWindow::createActions ()
           SLOT(remove()));
   delete_action_->setCheckable(false);
 
-  cut_action_ = new QAction(QIcon(icon_path+"cut.png"), QString("剪切"),
-                            action_group_);
-  connect(cut_action_, SIGNAL(triggered()), cloud_editor_widget_,SLOT(cut()));
-  cut_action_ -> setCheckable(false);
+//  cut_action_ = new QAction(QIcon(icon_path+"cut.png"), QString("剪切"),
+//                            action_group_);
+//  connect(cut_action_, SIGNAL(triggered()), cloud_editor_widget_,SLOT(cut()));
+//  cut_action_ -> setCheckable(false);
 
-  paste_action_ = new QAction(QIcon(icon_path+"paste.png"), QString("粘贴"),
-                              action_group_);
-  connect(paste_action_, SIGNAL(triggered()), cloud_editor_widget_,
-          SLOT(paste()));
-  paste_action_ -> setCheckable(false);
+//  paste_action_ = new QAction(QIcon(icon_path+"paste.png"), QString("粘贴"),
+//                              action_group_);
+//  connect(paste_action_, SIGNAL(triggered()), cloud_editor_widget_,
+//          SLOT(paste()));
+//  paste_action_ -> setCheckable(false);
 
   toggle_blend_action_ = new QAction(tr("Outline Points"), this);
   connect(toggle_blend_action_, SIGNAL(triggered()), cloud_editor_widget_,
@@ -233,6 +205,25 @@ MainWindow::createActions ()
   view_action_->setCheckable(true);
   view_action_->setChecked(true);
 
+  zoom_= new QAction(QIcon(icon_path+"缩放大.png"),
+                             QString("缩放"), action_group_);
+  connect(zoom_, SIGNAL(triggered()), cloud_editor_widget_,
+          SLOT(zoom()));
+  zoom_->setCheckable(true);
+
+  interactive= new QAction(QIcon(icon_path+"compare.png"),
+                             QString("比较"), action_group_);
+  connect(interactive, SIGNAL(triggered()), cloud_editor_widget_,
+          SLOT(interatact()));
+
+
+  move= new QAction(QIcon(icon_path+"移动.png"),
+                             QString("移动"), action_group_);
+  connect(move, SIGNAL(triggered()), cloud_editor_widget_,
+          SLOT(move()));
+  move->setCheckable(true);
+
+
   undo_action_ = new QAction(QIcon(icon_path+"undo.png"),
                                    QString("撤销"), action_group_);
   connect(undo_action_, SIGNAL(triggered()), cloud_editor_widget_,
@@ -250,14 +241,11 @@ MainWindow::createActions ()
   connect(denoise_action_, SIGNAL(triggered()), cloud_editor_widget_,
           SLOT(denoise()));
 
-  range=new QAction(QString("测距"),this);
-  connect(range,SIGNAL(triggered()),this,SLOT(createRangeWindow()));
-
-  select_action_ = new QAction(QIcon(icon_path+"click.png"),
-                               QString("点选"), action_group_);
-  connect(select_action_, SIGNAL(triggered()), cloud_editor_widget_,
-          SLOT(select1D()));
-  select_action_->setCheckable(true);
+//  select_action_ = new QAction(QIcon(icon_path+"click.png"),
+//                               QString("点选"), action_group_);
+//  connect(select_action_, SIGNAL(triggered()), cloud_editor_widget_,
+//          SLOT(select1D()));
+//  select_action_->setCheckable(true);
 
   invert_select_action_ = new QAction(QIcon(icon_path+"invert.png"),
                                       QString("反选"), action_group_);
@@ -284,18 +272,17 @@ MainWindow::createActions ()
           SLOT(showStat()));
   show_stat_action_->setCheckable(false);
 
-  zoom_= new QAction(QIcon(icon_path+"缩放大.png"),
-                             QString("缩放"), action_group_);
-  connect(zoom_, SIGNAL(triggered()), cloud_editor_widget_,
-          SLOT(zoom()));
-  zoom_->setCheckable(true);
-  move= new QAction(QIcon(icon_path+"移动.png"),
-                             QString("移动"), action_group_);
-  connect(move, SIGNAL(triggered()), cloud_editor_widget_,
-          SLOT(move()));
-  move->setCheckable(true);
+  ranging_tool=new QAction(QIcon(icon_path+"ranging.png"),
+                      QString("测距"),action_group_);
+  connect(ranging_tool,SIGNAL(triggered()),cloud_editor_widget_,
+          SLOT(range()));
+  ranging_tool->setCheckable(true);
 
+  extracting=new QAction(QIcon(icon_path+"extracting.png"),QString("抽取"),action_group_);
+  connect(extracting,SIGNAL(triggered()),cloud_editor_widget_,SLOT(extracting()));
 
+  extracting_save=new QAction(QIcon(icon_path+"保存.png"),QString("保存抽取文件"),action_group_);
+  connect(extracting_save,SIGNAL(triggered()),cloud_editor_widget_,SLOT(saveExtractingFile()));
 }
 
 
@@ -303,6 +290,11 @@ void
 MainWindow::createMenus ()
 {
   file_menu_ = new QMenu(QString("&文件"), this);
+
+
+  QFont font = file_menu_->font();
+  font.setPointSize(20);
+  file_menu_->setFont(font);
 //  file_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
   file_menu_ -> addAction(open_action_);
   file_menu_ -> addSeparator();
@@ -311,40 +303,45 @@ MainWindow::createMenus ()
   file_menu_ -> addAction(exit_action_);
 
   edit_menu_ = new QMenu(QString("&编辑"), this);
+  edit_menu_->setFont(font);
 //  edit_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
   edit_menu_ -> addAction(undo_action_);
   edit_menu_ -> addSeparator();
-  edit_menu_ -> addAction(cut_action_);
-  edit_menu_ -> addAction(copy_action_);
-  edit_menu_ -> addAction(paste_action_);
+//  edit_menu_ -> addAction(cut_action_);
+//  edit_menu_ -> addAction(copy_action_);
+//  edit_menu_ -> addAction(paste_action_);
   edit_menu_ -> addAction(delete_action_);
   edit_menu_ -> addSeparator();
   edit_menu_ -> addAction(transform_action_);
 
 
   select_menu_ = new QMenu(QString("&选择"), this);
+  select_menu_->setFont(font);
  // select_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
-  select_menu_ -> addAction(select_action_);
+//  select_menu_ -> addAction(select_action_);
   select_menu_ -> addAction(select_2D_action_);
   //select_menu_ -> addAction(select_3D_action_);
 
   display_menu_ = new QMenu(QString("&显示"), this);
+  display_menu_->setFont(font);
 //  display_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
   display_menu_ -> addAction(toggle_blend_action_);
   display_menu_->addAction(display_z_value);
 
+
   view_menu_ = new QMenu(QString("&查看"), this);
+  view_menu_->setFont(font);
 //  view_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
   view_menu_ -> addAction(view_action_);
   view_menu_ -> addAction(show_stat_action_);
-  view_menu_->addAction(zoom_);
-  view_menu_->addAction(move);
+
   tool_menu_ = new QMenu(QString("&算法"), this);
+  tool_menu_->setFont(font);
 //  tool_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
   tool_menu_ -> addAction(denoise_action_);
-  tool_menu_->addAction(range);
 
   help_menu_ = new QMenu(QString("&帮助"), this);
+  help_menu_->setFont(font);
 //  help_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
   help_menu_ -> addAction(about_action_);
   help_menu_ -> addAction(help_action_);
@@ -355,6 +352,7 @@ MainWindow::createMenus ()
   menuBar() -> addMenu(display_menu_);
   menuBar() -> addMenu(tool_menu_);
   menuBar() -> addMenu(help_menu_);
+  menuBar()->setFont(font);
 }
 
 void
@@ -363,32 +361,42 @@ MainWindow::createToolBars ()
   createSpinBoxes();
   createSliders();
   view_tool_bar_ = addToolBar(tr("file"));
+  view_tool_bar_->setFixedHeight(100);
+  view_tool_bar_->setIconSize(QSize(60,60));
   view_tool_bar_ -> addAction(open_action_);
   view_tool_bar_ -> addAction(save_action_);
   view_tool_bar_ = addToolBar(tr("view"));
+  view_tool_bar_->setFixedHeight(100);
+  view_tool_bar_->setIconSize(QSize(60,60));
   view_tool_bar_ -> addAction(view_action_);
-  view_tool_bar_ -> addAction(select_action_);
-  view_tool_bar_ -> addAction(select_2D_action_);
-  //view_tool_bar_ -> addAction(select_3D_action_);
-  view_tool_bar_ -> addAction(invert_select_action_);
-  QLabel *ptSizeLabel = new QLabel(QString("点大小:"));
-  ptSizeLabel -> setAttribute(Qt::WA_DeleteOnClose);
-  view_tool_bar_ -> addWidget(ptSizeLabel);
-  view_tool_bar_ -> addWidget(point_size_spin_box_);
-  QLabel *selectedPtSizeLabel = new QLabel(QString("所选点大小:"));
-  selectedPtSizeLabel -> setAttribute(Qt::WA_DeleteOnClose);
-  view_tool_bar_ -> addWidget(selectedPtSizeLabel);
-  view_tool_bar_ -> addWidget(selected_point_size_spin_box_);
   view_tool_bar_->addAction(zoom_);
   view_tool_bar_->addAction(move);
+//  view_tool_bar_ -> addAction(select_action_);
+  view_tool_bar_ -> addAction(select_2D_action_);
+  view_tool_bar_->addAction(ranging_tool);
+  //view_tool_bar_ -> addAction(select_3D_action_);
+  view_tool_bar_ -> addAction(invert_select_action_);
+//  QLabel *ptSizeLabel = new QLabel(QString("点大小:"));
+//  ptSizeLabel -> setAttribute(Qt::WA_DeleteOnClose);
+//  view_tool_bar_ -> addWidget(ptSizeLabel);
+//  view_tool_bar_ -> addWidget(point_size_spin_box_);
+//  QLabel *selectedPtSizeLabel = new QLabel(QString("所选点大小:"));
+//  selectedPtSizeLabel -> setAttribute(Qt::WA_DeleteOnClose);
+//  view_tool_bar_ -> addWidget(selectedPtSizeLabel);
+//  view_tool_bar_ -> addWidget(selected_point_size_spin_box_);
   edit_tool_bar_ = addToolBar(tr("edit"));
+  edit_tool_bar_->setFixedHeight(100);
+  edit_tool_bar_->setIconSize(QSize(60,60));
   edit_tool_bar_ -> addAction(undo_action_);
-  edit_tool_bar_ -> addAction(copy_action_);
-  edit_tool_bar_ -> addAction(cut_action_);
+//  edit_tool_bar_ -> addAction(copy_action_);
+//  edit_tool_bar_ -> addAction(cut_action_);
   edit_tool_bar_ -> addAction(delete_action_);
-  edit_tool_bar_ -> addAction(paste_action_);
+//  edit_tool_bar_ -> addAction(paste_action_);
   edit_tool_bar_ -> addAction(transform_action_);
   edit_tool_bar_ -> addAction(show_stat_action_);
+  edit_tool_bar_->addAction(extracting);
+  edit_tool_bar_->addAction(extracting_save);
+  edit_tool_bar_->addAction(interactive);
 }
 
 void
@@ -455,28 +463,4 @@ MainWindow::createSliders ()
   move_speed_slider_ -> setTickPosition(QSlider::TicksBothSides);
   move_speed_slider_ -> setTickInterval(10);
   move_speed_slider_ -> setSingleStep(1);
-}
-
-void
-MainWindow::createRangeWindow()
-{
-    rangeWindow=new QDialog();
-    rangeWindow->setAttribute(Qt::WA_DeleteOnClose);
-    Qt::WindowFlags flags = rangeWindow->windowFlags();
-    rangeWindow->setWindowFlags(flags | Qt::WindowStaysOnTopHint);
-    rangeWindow->setWindowTitle("测距");
-   rangeWindow->setGeometry(geometry().right(),100,200,100);
-    layout=new QVBoxLayout();
-    perimeterLabel=new QLabel("周长:0");
-    areaLabel=new QLabel("面积:0");
-    resetButton=new QPushButton("重置");
-    connect(resetButton,SIGNAL(released()),this,SLOT(ResetFunction()));
-    qDebug("初始化完毕");
-    perimeterLabel->setAttribute(Qt::WA_DeleteOnClose);
-    areaLabel->setAttribute(Qt::WA_DeleteOnClose);
-    layout->addWidget(perimeterLabel);
-    layout->addWidget(areaLabel);
-    layout->addWidget(resetButton);
-    rangeWindow->setLayout(layout);
-    rangeWindow->show();
 }

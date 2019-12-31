@@ -43,7 +43,7 @@
 StatisticsDialog::StatisticsDialog(QWidget *)
 {
   button_box_ = new QDialogButtonBox;
-  button_box_->addButton(tr("Hide"), QDialogButtonBox::AcceptRole);
+  button_box_->addButton(tr("隐藏"), QDialogButtonBox::AcceptRole);
   connect(button_box_, SIGNAL(accepted()), this, SLOT(accept()));
 
   stat_label_ = new QLabel(tr(""));
@@ -51,7 +51,7 @@ StatisticsDialog::StatisticsDialog(QWidget *)
   main_layout_ -> addWidget(stat_label_);
   main_layout_ -> addWidget(button_box_);
   setLayout(main_layout_);
-  setWindowTitle(tr("Cloud Editor Statistics"));
+  setWindowTitle(tr("点云统计"));
   connect(&timer_, SIGNAL(timeout()), this, SLOT(update()));
   timer_.start(200);
 }
