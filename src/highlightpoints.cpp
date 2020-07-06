@@ -64,3 +64,4 @@ HightLightPoints::highlightpoints(IndexVector indicies)
     cloud_ptr->setSelection(selection_ptr_);
     cloud_ptr -> drawWithHighlightColor();
 }
+

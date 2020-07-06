@@ -12,6 +12,7 @@
 #include <vector>
 #include <QList>
 #include <pcl/apps/point_cloud_editor/toolInterface.h>
+#include <pcl/apps/point_cloud_editor/bestfitplane.h>
 
 enum Plane
 {
@@ -54,38 +55,17 @@ private:
     void drawLines();//线段
     void drawLine(QPoint point1,QPoint point2);//划线
     void calculateArea();//计算面积
-    void calculatePerimeter();//计算面积
-    Point calculateNormal(Point p1,Point p2,Point o);//计算法线向量方向
+    void calculatePerimeter();//计算周长
     CloudPtr cloud_ptr_;
     void highLight(int index);//高亮显示
     void update();//更新
-    void whichPlane();//判断点在哪个位置
     float getDistance(Point point1,Point point2);//计算两个点的距离
     boost::shared_ptr<Converter> converter;
     void getPoint3D(int x,int y);
-    float countTriangleArea(Point a,Point b,Point c);
-    void calculateobb();//计算最小包围盒
     Point calculateCrossProduct(Point p1,Point p2);//计算叉积
     Point getProjectPoint(Point normal,Point original,Point p);//计算点p在法线和已知起始点的平面上的投影
-    float calculateDotProduct(Point3D p1,Point3D p2);//计算点积
     boost::shared_ptr<HightLightPoints> highLighter;
-    Point x_axis;
-    Point y_axis;
-    Point z_axis;
-    Point center;
-
-    Point xozNormal;
-    Point xoyNormal;
-    Point yozNormal;
-
-    std::vector<Point> xozPlane;
-    std::vector<Point> yozPlane;
-    std::vector<Point> xoyPlane;
-
-    float xozArea=0;
-    float xoyArea=0;
-    float yozArea=0;
-
+    float getAreaOfTriangle(Point p1,Point p2);
     int mouse_x=0;
     int mouse_y=0;
 

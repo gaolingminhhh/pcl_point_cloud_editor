@@ -112,9 +112,6 @@ class MainWindow : public QMainWindow
     void
     help ();
 
-    void
-    display_z_value_fun();
-
 
   private:
     /// Initialization function.  This handles the initialization of the widget,
@@ -222,8 +219,28 @@ class MainWindow : public QMainWindow
     QAction *display_z_value;
     QAction *ranging_tool;
     QAction *extracting;
+    QAction *display_boundary;
     ///save extracting file
     QAction *extracting_save;
+
+    ///识别裂缝
+    QAction *crackdetect;
+
+    ///识别action
+    QAction *SACMODEL_PLANE_action;
+    QAction *SACMODEL_LINE_action;
+    QAction *SACMODEL_CIRCLE2D_action;
+    QAction *SACMODEL_SPHERE_action;
+    QAction *SACMODEL_CYLINDER_action;
+    QAction *SACMODEL_PARALLEL_LINE_action;
+    QAction *SACMODEL_PERPENDICULAR_PLANE_action;
+    QAction *SACMODEL_NORMAL_PLANE_action;
+    QAction *SACMODEL_PARALLEL_PLANE_action;
+    QAction *SACMODEL_NORMAL_PARALLEL_PLANE_action;
+    //识别二维码
+    QAction *qrcode_recognize;
+    //TODO 边界识别
+    ///识别end
     ///end
 
     /// the file menu
@@ -246,6 +263,8 @@ class MainWindow : public QMainWindow
 
     /// the help menu
     QMenu *help_menu_;
+
+    QMenu *recognition_menu;
 
     /// the spin box for adjusting point size.
     QSpinBox *point_size_spin_box_;

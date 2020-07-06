@@ -1,11 +1,10 @@
-#include <pcl/apps/point_cloud_editor/octreesearch.h>
+#include <pcl/apps/point_cloud_editor/kdtreesearch.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
 #include <math.h>
 #include <thread>
 
-OctreeSearch::OctreeSearch(CloudPtr cloud_ptr_):cloud_ptr_(cloud_ptr_)
+KdtreeSearch::KdtreeSearch(CloudPtr cloud_ptr_):cloud_ptr_(cloud_ptr_)
 {
     qDebug("初始化八叉树");
     //  cloud_ptr=cloud_ptr_;
@@ -31,26 +30,28 @@ OctreeSearch::OctreeSearch(CloudPtr cloud_ptr_):cloud_ptr_(cloud_ptr_)
             }
         }
     }
-    qDebug("count");
     searchPoint();
+}
+
+KdtreeSearch::~KdtreeSearch()
+{
 
 }
 
-OctreeSearch::~OctreeSearch(){}
-
 void
-OctreeSearch::searchPoint()
+KdtreeSearch::searchPoint()
 {
-    pcl::octree::OctreePointCloudSearch<pcl::PointXYZRGBA> octree (256.0f);
-    octree.setInputCloud(cloud_ptr_->getCloud3DPtr());
-    octree.addPointsFromInputCloud ();
+
+    pcl::KdTreeFLANN<pcl::PointXYZRGBA> kdtree;
+    kdtree.setInputCloud(cloud_ptr_->getCloud3DPtr());
+   // kdtree.addPointsFromInputCloud ();
     std::vector<int> vertotint;
     std::vector<float> distance;
     pointindicies.clear();
-
+    qDebug("kdtree");
     for(int i=0;i<similarPoints.size();i++)
     {
-        if(!octree.nearestKSearch(similarPoints[i],1,vertotint,distance)>0)
+        if(kdtree.nearestKSearch(similarPoints[i],1,vertotint,distance)<=0)
         {
             continue;
         }

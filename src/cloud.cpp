@@ -430,7 +430,7 @@ Cloud3D::Ptr
 Cloud::getCloud3DPtr() const
 {
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBA>);
-    cloud->points=cloud_.points;
+    *cloud=cloud_;
     return cloud;
 }
 

@@ -103,8 +103,8 @@ class ToolInterface
     float area=0;
     bool isScale=false;
     bool isMove=false;
-    void move(){isScale=false;isMove=true;printf("move");}
-    void zoom(){isScale=true;isMove=false;printf("zoom2");}
+    void move(){isScale=false;isMove=true;}
+    void zoom(){isScale=true;isMove=false;}
   protected:
     /// @brief Default constructor
     ToolInterface ()

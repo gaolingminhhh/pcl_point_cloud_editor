@@ -1,6 +1,5 @@
 #include <pcl/point_cloud.h>
-#include <pcl/octree/octree_search.h>
-
+#include <pcl/kdtree/kdtree_flann.h>
 #include <iostream>
 #include <vector>
 #include <ctime>
@@ -10,13 +9,13 @@
 #include <pcl/apps/point_cloud_editor/ranging.h>
 #include <set>
 #include <thread>
-class OctreeSearch
+class KdtreeSearch
 {
 public:
     std::vector<pcl::PointXYZRGBA> points;
     std::set<unsigned int> pointindicies;
-    OctreeSearch(CloudPtr cloud_ptr_);
-    ~OctreeSearch();
+    KdtreeSearch(CloudPtr cloud_ptr_);
+    ~KdtreeSearch();
 private:
     CloudPtr cloud_ptr_;
     std::vector<pcl::PointXYZRGBA> similarPoints;

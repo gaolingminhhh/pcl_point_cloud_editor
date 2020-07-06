@@ -75,12 +75,13 @@
 #include <pcl/apps/point_cloud_editor/extracting.h>
 #include <QVBoxLayout>
 #include <pcl/apps/point_cloud_editor/interactive_panel.h>
+#include <set>
 
 CloudEditorWidget::CloudEditorWidget (QWidget *parent)
     : QGLWidget(QGLFormat(QGL::DoubleBuffer | QGL::DepthBuffer |
                           QGL::Rgba | QGL::StencilBuffer), parent),
       //  QOpenGLWidget(parent),
-      point_size_(2.0f), selected_point_size_(10.0f),
+      point_size_(2.0f), selected_point_size_(14.0f),
       cam_fov_(60.0), cam_aspect_(1.0), cam_near_(0.0001), cam_far_(100.0),
       color_scheme_(COLOR_BY_PURE), is_colored_(false)
 {
@@ -99,7 +100,9 @@ CloudEditorWidget::~CloudEditorWidget ()
 void
 CloudEditorWidget::loadFile(const std::string &filename)
 {
-    std::string ext = filename.substr(filename.find_last_of('.')+1);
+    //  std::string ext = filename.substr(filename.find_last_of('.')+1);
+    std::string ext = ".pcd";
+
     FileLoadMap::iterator it = cloud_load_func_map_.find(ext);
     if (it != cloud_load_func_map_.end())
         (it->second)(this, filename);
@@ -110,7 +113,7 @@ CloudEditorWidget::loadFile(const std::string &filename)
 void
 CloudEditorWidget::load ()
 {
-    QString file_path = QFileDialog::getOpenFileName(this, tr("Open File"));
+    QString file_path = QFileDialog::getOpenFileName(this, tr("Open File"),".","point cloud data(*.pcd)");
 
     if (file_path.isEmpty())
         return;
@@ -156,6 +159,8 @@ CloudEditorWidget::createPanel()
 
 }
 
+
+
 void
 CloudEditorWidget::saveFiles(const Cloud3D &cloud)
 {
@@ -173,7 +178,7 @@ CloudEditorWidget::saveFiles(const Cloud3D &cloud)
         swapRBValues(&cloud3d);
         try
         {
-            pcl::io::savePCDFile(file_path_std, cloud3d);
+            pcl::io::savePCDFileBinary(file_path_std, cloud3d);
 
         }
         catch (...)
@@ -189,7 +194,7 @@ CloudEditorWidget::saveFiles(const Cloud3D &cloud)
         pcl::copyPointCloud(cloud, uncolored_cloud);
         try
         {
-            pcl::io::savePCDFile(file_path_std, uncolored_cloud);
+            pcl::io::savePCDFileBinary(file_path_std, uncolored_cloud);
         }
         catch (...)
         {
@@ -197,46 +202,6 @@ CloudEditorWidget::saveFiles(const Cloud3D &cloud)
                                      tr("无法保存%1.").arg(file_path));
         }
     }
-}
-
-void
-CloudEditorWidget::drawLine()
-{
-    if(!ranging)
-        return;
-    QList<QLine> lines=ranging->getLines();
-    qDebug("lines size %d",lines.size());
-
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    glColor3f(0.0,
-              1.0,
-              0.0);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    {
-        glLoadIdentity();
-        glOrtho(0, viewport[2], viewport[3], 0, -1, 1);
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        {
-            glLoadIdentity();
-            glBegin(GL_LINES);
-            {
-                for(int i=0;i<lines.size();i++){
-
-                    glVertex2d(lines[i].p1().x(),lines[i].p1().y());
-                    glVertex2d(lines[i].p2().x(),lines[i].p2().y());
-                }
-            }
-            glEnd();
-        }
-        glPopMatrix();
-        glMatrixMode(GL_PROJECTION);
-    }
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    // update();
 }
 
 void
@@ -252,6 +217,59 @@ CloudEditorWidget::toggleBlendMode ()
         glBlendFunc( GL_SRC_ALPHA, GL_ZERO );
     update();
 }
+
+
+void
+CloudEditorWidget::recognize_SACMODEL_CIRCLE2D()
+{
+    qDebug()<<"SACMODEL_CIRCLE2D";
+    recognition(pcl::SACMODEL_CIRCLE2D);
+}
+
+void
+CloudEditorWidget::recognize_SACMODEL_CYLINDER()
+{
+    qDebug()<<"SACMODEL_CYLINDER";
+    recognition(pcl::SACMODEL_CYLINDER);
+}
+
+
+void
+CloudEditorWidget::recognize_SACMODEL_PLANE()
+{
+    qDebug()<<"recognize_SACMODEL_PLANE";
+    //  recognition(pcl::SACMODEL_PLANE);
+
+    if(recognition_ptr->recognizePlane(0.01))
+        QMessageBox::information(this, tr("点云编辑器"),
+                                 tr("识别成功."));
+    else
+        QMessageBox::information(this, tr("点云编辑器"),
+                                 tr("未能识别."));
+
+}
+
+void
+CloudEditorWidget::recognize_SACMODEL_SPHERE()
+{
+    qDebug()<<"recognize_SACMODEL_SPHERE";
+    recognition(pcl::SACMODEL_SPHERE);
+}
+
+void
+CloudEditorWidget::recognition(int model)
+{
+    bool isRecognized=recognition_ptr->getIndicies(model);
+    //  qDebug()<<indiciesVector.size();
+    if(isRecognized)
+        QMessageBox::information(this, tr("点云编辑器"),
+                                 tr("识别成功."));
+    else
+
+        QMessageBox::information(this, tr("点云编辑器"),
+                                 tr("未能识别."));
+}
+
 
 void
 CloudEditorWidget::saveExtractingFile()
@@ -288,16 +306,37 @@ CloudEditorWidget::select1D ()
 }
 
 void
+CloudEditorWidget::loadqrcode()
+{
+    QString file_path=QFileDialog::getOpenFileName(this,tr("打开二维码/条形码"),".","图片(*.jpg *.png)");
+    if(file_path.isEmpty())
+        return;
+
+    if(!qrCodeLocater_ptr)
+        qrCodeLocater_ptr=boost::shared_ptr<QRCodeLocater>(new QRCodeLocater());
+    std::string file_type,file_data;
+    if(qrCodeLocater_ptr->locate_recognize(file_path.toStdString(),file_type,file_data))
+    {
+        QMessageBox::information(this,QString("点云编辑器"),tr("条码类型:%1,\n数据:%2").arg(QString::fromStdString(file_type),QString::fromStdString(file_data)));
+    }
+    else
+    {
+        QMessageBox::information(this,QString("点云编辑器"),tr("读取失败"));
+    }
+
+}
+
+void
 CloudEditorWidget::interatact()
 {
     if(!cloud_ptr_)
     {
         QMessageBox::information(this, tr("点云编辑器"),
-                              tr("请先载入点云文件."));
+                                 tr("请先载入点云文件."));
         return;
     }
     ///a pointer to cloud being compare edit by Echo
-    QString file_path = QFileDialog::getOpenFileName(this, tr("打开点云文件"));
+    QString file_path = QFileDialog::getOpenFileName(this, tr("打开点云文件"),".","point cloud data(*.pcd)");
     if (file_path.isEmpty())
         return;
     try
@@ -365,11 +404,14 @@ CloudEditorWidget::invertSelect ()
 }
 
 void
-CloudEditorWidget::range()
+CloudEditorWidget::range(bool isChecked)
 {
     if(!cloud_ptr_)
         return;
-    tool_ptr_=ranging;
+    if(isChecked)
+        tool_ptr_=ranging;
+    //  else
+    //   ranging->reset();
 }
 
 void
@@ -453,6 +495,25 @@ CloudEditorWidget::zoom()
     tool_ptr_->zoom();
 
 }
+
+void
+CloudEditorWidget::test()
+{
+    Cloud3D ptr_cloud2;
+    //std::vector<float> v={0.885447f,0.00716902, 0.464697,-0.339696,-0.02701,0.998988,0.0360614 ,-0.0514135,-0.463965,-0.0444817,0.884739,0.0768001,0,0,0,1};
+    Eigen::Matrix4f matrix;
+    std::vector<float> v={1,0,0,6, 0,1,0,6, 0,0,1,100, 0,0,0,1};
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            matrix(i,j)=v[4*i+j];
+        }
+    }
+    pcl::transformPointCloud(cloud_ptr_->getInternalCloud(),ptr_cloud2,matrix);
+    swapRBValues(&ptr_cloud2);
+    pcl::io::savePCDFile("/home/echo/桌面/icptestpcd/model3.pcd",ptr_cloud2);
+}
 void
 CloudEditorWidget::move()
 {
@@ -464,6 +525,112 @@ CloudEditorWidget::move()
 
 }
 
+
+void
+CloudEditorWidget::calculateBoundaries(Cloud3D& cloud_)
+{
+    //    std::vector<Cloud3D> segments=EuclideanSeg::segmentation(cloud_);
+    //    IndexVector segmentsIndex;
+    //    qDebug()<<cloud_ptr_->getCloud3DPtr()->size();
+    //    PclCloudPtr cloud(new Cloud3D);
+    //    segmentsIndex.push_back(0);
+    //    boundaries.clear();
+    //    cloud->operator +=(segments[0]);
+    //    for(int i=1;i<segments.size();i++)
+    //    {
+    //        segmentsIndex.push_back(segmentsIndex[i-1]+segments[i-1].size());
+    //        cloud->operator +=(segments[i]);
+    //    }
+    //    //  std::vector<std::vector<unsigned int>> boundaries;
+    //    cloud_ptr_ = CloudPtr(new Cloud(*cloud, false));
+    //    //  vector<unsigned int> boundaries;
+    //    for(int i=0;i<segments.size();i++)
+    //    {
+  //  vector<unsigned int> boundariesIndex=BoundaryEstimation::getBoundary(segments[i]);
+   boundaries=BoundaryEstimation::getBoundary(cloud_);
+//    for(int j=0;j<boundariesIndex.size();j++)
+//    {
+//        boundaries.push_back(segmentsIndex[i]+boundariesIndex[j]);
+//    }
+
+
+    //    }
+}
+
+void
+CloudEditorWidget::display_boundary(bool isChecked)
+{
+    if(!cloud_ptr_)
+        return;
+
+    //highlight=boost::shared_ptr<HightLightPoints>(new HightLightPoints(cloud_ptr_,selection_ptr_));
+    if(isChecked)
+    {
+        calculateBoundaries(*(cloud_ptr_->getCloud3DPtr()));
+        highlight->highlightpoints(boundaries);
+        isShowBoundary=true;
+    }
+    else{
+        highlight->dishighlight(boundaries);
+        isShowBoundary=false;
+    }
+    qDebug()<<"is checked "<<isShowBoundary;
+}
+
+void
+CloudEditorWidget::sortLine(std::vector<unsigned int> points)
+{
+    Point3D point1=cloud_ptr_->getCloud3DPtr()->points[points[0]];
+    std::vector<int> curve;
+    curve.push_back(points[0]);
+    curves.push_back(curve);
+    points.erase(points.begin());
+    unsigned int index=0;
+    while(points.size()!=0)
+    {
+        int next=0;
+        float mindistance=getDistance(point1,cloud_ptr_->getCloud3DPtr()->points[0]);
+        for(int i=1;i<points.size();i++)
+        {
+            if(getDistance(point1,cloud_ptr_->getCloud3DPtr()->points[points[i]])<mindistance)
+            {
+                next=i;
+                mindistance=getDistance(point1,cloud_ptr_->getCloud3DPtr()->points[points[i]]);
+            }
+        }
+        if(mindistance<distance)
+        {
+            curves[index].push_back(next);
+            point1=cloud_ptr_->getCloud3DPtr()->points[points[next]];
+            points.erase(points.begin()+next);
+        }
+        else
+        {
+            index++;
+            point1=cloud_ptr_->getCloud3DPtr()->points[points[0]];
+            std::vector<int> curven;
+            curven.push_back(points[0]);
+            curves.push_back(curven);
+            points.erase(points.begin());
+        }
+
+    }
+    qDebug()<<"points.size() "<<points.size();
+    qDebug()<<"曲线数量"<<curves.size();
+}
+
+
+float
+CloudEditorWidget::getDistance(Point3D point1, Point3D point2)
+{
+    float disx=std::abs(point1.x-point2.x);
+    float disy=std::abs(point1.y-point2.y);
+    float disz=std::abs(point1.z-point2.z);
+
+    float distance=sqrt(disx*disx+disy*disy+disz*disz);
+    return distance;
+}
+
 void
 CloudEditorWidget::onMouseStopMove()
 {
@@ -473,6 +640,7 @@ CloudEditorWidget::onMouseStopMove()
 void
 CloudEditorWidget::displayZValue(bool isChecked)
 {
+    qDebug("ischecked : "+isChecked);
     if(!cloud_ptr_)
         return;
     if(isChecked){
@@ -487,9 +655,6 @@ CloudEditorWidget::displayZValue(bool isChecked)
     isbuttonchecked=true;
     isdisplaychecked=isChecked;
 }
-//end
-
-
 
 void
 CloudEditorWidget::denoise ()
@@ -506,6 +671,29 @@ CloudEditorWidget::denoise ()
     boost::shared_ptr<DenoiseCommand> c(new DenoiseCommand(selection_ptr_,
                                                            cloud_ptr_, form.getMeanK(), form.getStdDevThresh()));
     command_queue_ptr_->execute(c);
+    update();
+}
+
+void
+CloudEditorWidget::crackIdentity()
+{
+    if(!cloud_ptr_)
+        return;
+
+
+    Cloud3D::Ptr cloud_crack(new Cloud3D);
+    //高亮显示
+    CrackIdentityForm form;
+    form.exec();
+    // check for cancel.
+    if (!form.ok())
+    {
+        return;
+    }
+    crackdetect(cloud_ptr_->getCloud3DPtr(),form.getK(),form.getThresh(),cloud_crack);
+    cloud_ptr_= CloudPtr(new Cloud(*cloud_crack, false));;
+
+    initPtrs(cloud_ptr_);
     update();
 }
 
@@ -596,21 +784,21 @@ CloudEditorWidget::ChangeText()
     {
         if(isdisplaychecked)
         {
-            octreesearch = boost::shared_ptr<OctreeSearch>(new OctreeSearch(cloud_ptr_));
-            std::copy(octreesearch->pointindicies.begin(),octreesearch->pointindicies.end(),std::back_inserter(vector));
+            kdtreeSearch = boost::shared_ptr<KdtreeSearch>(new KdtreeSearch(cloud_ptr_));
+            std::copy(kdtreeSearch->pointindicies.begin(),kdtreeSearch->pointindicies.end(),std::back_inserter(vector));
             highlight->highlightpoints(vector);
-
         }
         else
         {
-            std::copy(octreesearch->pointindicies.begin(),octreesearch->pointindicies.end(),std::back_inserter(vector));
+            std::copy(kdtreeSearch->pointindicies.begin(),kdtreeSearch->pointindicies.end(),std::back_inserter(vector));
             highlight->dishighlight(vector);
         }
+        update();
     }
 
     if(isdisplaychecked)
     {
-        std::copy(octreesearch->pointindicies.begin(),octreesearch->pointindicies.end(),std::back_inserter(vector));
+        std::copy(kdtreeSearch->pointindicies.begin(),kdtreeSearch->pointindicies.end(),std::back_inserter(vector));
         for(int i=0;i<vector.size();i++)
         {
             Point3D point=cloud_ptr_->getDisplaySpacePoint(vector[i]);
@@ -618,8 +806,6 @@ CloudEditorWidget::ChangeText()
             renderText(qpoint.x(),qpoint.y(),QString::number(cloud_ptr_->getInternalCloud()[vector[i]].z));
         }
     }
-    //    if(!isbuttonchecked)
-    //        return;
 
     isbuttonchecked=false;
 }
@@ -675,7 +861,6 @@ CloudEditorWidget::extracting()
         return;
     }
     tool_ptr_=boost::shared_ptr<Extracting>(new Extracting(cloud_ptr_,is_colored_,converter));
-
 }
 
 void
@@ -731,8 +916,10 @@ void CloudEditorWidget::ShowAreaAndPerimeter()
 {
     if(!tool_ptr_)
         return;
-    //renderText(0,20,QString("面积:").append(QString::number( tool_ptr_->area)));
-    renderText(0,40,QString("周长:").append(QString::number( tool_ptr_->perimeter)));
+    QFont font = QFont("Arial");
+    font.setPointSize(20);
+    renderText(0,40,QString("面积:").append(QString::number( tool_ptr_->area)).append(" m2"),font);
+    renderText(0,80,QString("周长:").append(QString::number( tool_ptr_->perimeter)).append("m"),font);
 }
 
 void
@@ -808,7 +995,6 @@ CloudEditorWidget::mouseReleaseEvent (QMouseEvent *event)
         highlight->hightlight();
     }
     ((MainWindow*)parentWidget())->update();
-    //  displaytag();
     update();
 }
 
@@ -846,17 +1032,27 @@ CloudEditorWidget::loadFilePCD(const std::string &filename)
     pcl::removeNaNFromPointCloud(*pcl_cloud_ptr, *pcl_cloud_ptr, index);
     Statistics::clear();
     cloud_ptr_ = CloudPtr(new Cloud(*pcl_cloud_ptr, true));
+    cloud_orig=pcl_cloud_ptr;
     selection_ptr_ = SelectionPtr(new Selection(cloud_ptr_, true));
     copy_buffer_ptr_ = CopyBufferPtr(new CopyBuffer(true));
     cloud_ptr_->setPointSize(point_size_);
     cloud_ptr_->setHighlightPointSize(selected_point_size_);
-    highlight=boost::shared_ptr<HightLightPoints>(new HightLightPoints(cloud_ptr_,selection_ptr_));
-    tool_ptr_ =
-            boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud_ptr_));
-    converter=boost::shared_ptr<Converter>(new Converter(cloud_ptr_,highlight));
-    //   ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
-    //  octreesearch=boost::shared_ptr<OctreeSearch>(new OctreeSearch(cloud_ptr_));
-    ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
+    if(isShowBoundary){
+        display_boundary(true);
+    }
+    // qDebug()<<isShowBoundary;
+    //    highlight=boost::shared_ptr<HightLightPoints>(new HightLightPoints(cloud_ptr_,selection_ptr_));
+    //    recognition_ptr=boost::shared_ptr<Recognition>(new Recognition(cloud_ptr_));
+    //    tool_ptr_ =
+    //            boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud_ptr_));
+    //    converter=boost::shared_ptr<Converter>(new Converter(cloud_ptr_,highlight));
+    //    //test();
+    //    //   ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
+    //    //  kdtreeSearch=boost::shared_ptr<kdtreeSearch>(new kdtreeSearch(cloud_ptr_));
+    //    ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
+
+    initPtrs(cloud_ptr_);
+
     if (isColored(filename))
     {
         swapRBValues(cloud_ptr_);
@@ -870,6 +1066,21 @@ CloudEditorWidget::loadFilePCD(const std::string &filename)
     }
 }
 
+
+void
+CloudEditorWidget::initPtrs(CloudPtr &cloud)
+{
+    highlight=boost::shared_ptr<HightLightPoints>(new HightLightPoints(cloud,selection_ptr_));
+    recognition_ptr=boost::shared_ptr<Recognition>(new Recognition(cloud));
+    tool_ptr_ =
+            boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud));
+    converter=boost::shared_ptr<Converter>(new Converter(cloud,highlight));
+    //test();
+    //   ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
+    //  kdtreeSearch=boost::shared_ptr<kdtreeSearch>(new kdtreeSearch(cloud_ptr_));
+    //  ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud,highlight));
+
+}
 
 void
 CloudEditorWidget::initFileLoadMap()

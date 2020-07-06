@@ -6,7 +6,6 @@
 
 QT       += core gui
 QT += opengl
-
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = pcl_point_cloud_editor
@@ -50,9 +49,17 @@ SOURCES += \
     src/ranging.cpp \
     src/screenpointconverter.cpp \
     src/highlightpoints.cpp \
-    src/octreesearch.cpp \
     src/extracting.cpp \
-    src/interactive_panel.cpp
+    src/interactive_panel.cpp \
+    src/recognition.cpp \
+    src/pointcloudwidget.cpp \
+    src/qrcodelocate.cpp \
+    src/boundaryestimation.cpp \
+    src/bestfitplane.cpp \
+    src/euclideanseg.cpp \
+    src/kdtreesearch.cpp \
+    src/crackidentity.cpp \
+    src/crackidentityform.cpp
 
 HEADERS += \
     include/pcl/apps/point_cloud_editor/cloud.h \
@@ -83,9 +90,17 @@ HEADERS += \
     include/pcl/apps/point_cloud_editor/ranging.h \
     include/pcl/apps/point_cloud_editor/screenpointconverter.h \
     include/pcl/apps/point_cloud_editor/highlightpoints.h \
-    include/pcl/apps/point_cloud_editor/octreesearch.h \
     include/pcl/apps/point_cloud_editor/extracting.h \
-    include/pcl/apps/point_cloud_editor/interactive_panel.h
+    include/pcl/apps/point_cloud_editor/interactive_panel.h \
+    include/pcl/apps/point_cloud_editor/recognition.h \
+    include/pcl/apps/point_cloud_editor/pointcloudwidget.h \
+    include/pcl/apps/point_cloud_editor/qrcodelocate.h \
+    include/pcl/apps/point_cloud_editor/boundaryestimation.h \
+    include/pcl/apps/point_cloud_editor/bestfitplane.h \
+    include/pcl/apps/point_cloud_editor/euclideanseg.h \
+    include/pcl/apps/point_cloud_editor/kdtreesearch.h \
+    include/pcl/apps/point_cloud_editor/crackidentity.h \
+    include/pcl/apps/point_cloud_editor/crackidentityform.h
 
 RESOURCES += \
     resources/pceditor_resources.qrc
@@ -109,25 +124,25 @@ DISTFILES += \
     resources/缩放大.png \
     resources/移动.png
 
+INCLUDEPATH+=/home/echo/git-reponsitory/pcl_point_cloud_editor/include
 #Eigen
 INCLUDEPATH += /usr/include/eigen3
 
 #Vtk
-INCLUDEPATH += /usr/include/vtk-7.1
+INCLUDEPATH += /usr/local/include/vtk-8.2
 
-LIBS += /usr/lib/x86_64-linux-gnu/libvtk*.so
+LIBS += /usr/local/lib/libvtk*.so
 
 #Boost
 INCLUDEPATH += /usr/include/boost
 
 LIBS += /usr/lib/x86_64-linux-gnu/libboost_*.so
 
-INCLUDEPATH+=/home/echo/git-reponsitory/pcl_point_cloud_editor/include
 #PCL Header
-INCLUDEPATH += /usr/include/pcl-1.9
+INCLUDEPATH += /usr/local/include/pcl-1.9
 
 #PCL Lib
-LIBS        += /usr/lib/libpcl_*.so
+LIBS        += /usr/local/lib/libpcl_*.so
 
 INCLUDEPATH+=/usr/include/qt5/QtOpenGL
 
@@ -137,6 +152,14 @@ INCLUDEPATH+=/usr/include/GL
 
 LIBS+=/usr/lib/x86_64-linux-gnu/libGL*.so
 
+##opencv
+INCLUDEPATH+=/usr/local/include/opencv4/
 
+LIBS+=/usr/local/lib/libopencv*.so
+
+#zbar
+INCLUDEPATH+=/usr/include/zbar
+
+LIBS+=/usr/lib/x86_64-linux-gnu/libzbar*
 
 

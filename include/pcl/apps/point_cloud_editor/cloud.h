@@ -424,8 +424,6 @@ class Cloud : public Statistics
     /// The internal representation of the cloud
     Cloud3D cloud_;
 
-    Cloud3D::Ptr cloud3d_ptr;
-
     /// @brief A weak pointer pointing to the selection object.
     /// @details This implementation uses the weak pointer to allow for a lazy
     /// update of the cloud if the selection object is destroyed.

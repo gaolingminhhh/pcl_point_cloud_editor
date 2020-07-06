@@ -1,0 +1,9 @@
+#ifndef EUCILIDEANSEG_H
+#define EUCILIDEANSEG_H
+
+class EuclideanSeg
+{
+    
+}
+
+#endif // EUCILIDEANSEG_H

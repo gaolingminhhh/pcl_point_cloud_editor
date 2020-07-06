@@ -12,42 +12,21 @@
 #include <vector>
 #include <pcl/visualization/cloud_viewer.h>
 #include <boost/thread/thread.hpp>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <iomanip>
+using namespace Eigen;
+
 
 Ranging::Ranging(boost::shared_ptr<Converter> converter,CloudPtr cloud_ptr_,boost::shared_ptr<HightLightPoints> highLighter)
 {
     this->converter=converter;
     this->cloud_ptr_=cloud_ptr_;
     this->highLighter=highLighter;
-   // calculateobb();
-    xozNormal=calculateNormal(x_axis,z_axis,center);
-    yozNormal=calculateNormal(y_axis,z_axis,center);
-    xoyNormal=calculateNormal(x_axis,y_axis,center);
     qDebug("初始化完毕");
 }
 
 Ranging::~Ranging(){}
-
-float
-Ranging::countTriangleArea(Point a, Point b, Point c)
-{
-    float side[3];//存储三条边的长度;
-
-    side[0] = sqrt(pow(a.x - b.x,2)+pow(a.y - b.y,2) + pow(a.z - b.z,2));
-    side[1] = sqrt(pow(a.x - c.x,2)+pow(a.y - c.y,2) + pow(a.z - c.z,2));
-    side[2] = sqrt(pow(c.x - b.x,2)+pow(c.y - b.y,2) + pow(c.z - b.z,2));
-    float area=0;
-    //不能构成三角形;
-    if(side[0]+side[1]<=side[2] || side[0]+side[2]<=side[1] || side[1]+side[2]<=side[0])
-    {
-        area=0;
-        return area;
-    }
-
-    //利用海伦公式。s=sqr(p*(p-a)(p-b)(p-c));
-    double p = (side[0]+side[1]+side[2])/2; //半周长;
-    area = sqrt(p*(p-side[0])*(p-side[1])*(p-side[2]));
-    return area;
-}
 
 void
 Ranging::getPoint3D(int x, int y)
@@ -81,12 +60,10 @@ Ranging::reset()
     points.clear();
     indicies.clear();
     times=0;
-    xoyArea=0;
-    xozArea=0;
-    yozArea=0;
     perimeter=0;
     lines.clear();
 }
+
 
 float
 Ranging::getDistance(Point point1, Point point2)
@@ -141,29 +118,37 @@ Ranging::getLines() const
 void
 Ranging::calculateArea()
 {
-    xozArea=0;
-    yozArea=0;
-    xoyArea=0;
-    //当非闭合图像时,返回
-    if(times<=2)
+    area=0;
+    if(points.size()<=2){
         return;
-    Point center_(center.x,center.y,center.z);
-    xozPlane.clear();
-    yozPlane.clear();
-    xoyPlane.clear();
-    for(unsigned int i=0;i<points.size();i++)
-    {
-        xozPlane.push_back(getProjectPoint(xozNormal,center_,points[i]));
-        xoyPlane.push_back(getProjectPoint(xoyNormal,center_,points[i]));
-        yozPlane.push_back(getProjectPoint(yozNormal,center_,points[i]));
     }
-    for(unsigned int i=0;i<points.size();i++)
+    BestFitPlane bestfitplane;
+    std::vector<Vector3f> lists;
+    for(int i=0;i<points.size();i++)
     {
-        xozArea+=countTriangleArea(xozPlane[i],xozPlane[(i+1)%points.size()],center_);
-        xoyArea+=countTriangleArea(xoyPlane[i],xoyPlane[(i+1)%points.size()],center_);
-        yozArea+=countTriangleArea(yozPlane[i],yozPlane[(i+1)%points.size()],center_);
+        lists.push_back(Vector3f(points[i].x,points[i].y,points[i].z));
     }
-    area=xozArea;
+    std::pair<Vector3f,Vector3f> plane = bestfitplane.best_plane_from_points(lists);
+    Vector3f center=plane.first;
+    Vector3f normal=plane.second;
+    Point center_point(center[0],center[1],center[2]);
+    Point normal_point(normal[0],normal[1],normal[2]);
+    std::vector<Point> projectPoints;
+    for(int i=0;i<lists.size();i++)
+    {
+        Point p=Point(lists[i][0],lists[i][1],lists[i][2]);
+        Point point=getProjectPoint(normal_point,center_point,p);
+        projectPoints.push_back(point);
+    }
+    for(int i=0;i<projectPoints.size();i++)
+    {
+        Point p1=Point(projectPoints[i%projectPoints.size()].x-center_point.x,projectPoints[i%projectPoints.size()].y-center_point.y,
+                projectPoints[i%projectPoints.size()].z-center_point.z);
+        Point p2=Point(projectPoints[(i+1)%projectPoints.size()].x-center_point.x,projectPoints[(i+1)%projectPoints.size()].y-center_point.y,
+                projectPoints[(i+1)%projectPoints.size()].z-center_point.z);
+        area+=getAreaOfTriangle(p1,p2);
+    }
+    area =((float)( (int)( (area+0.005)*100)))/100;
 }
 
 void
@@ -171,21 +156,22 @@ Ranging::drawLines()
 {
     if(screenPositions.size()<2)
         return;
-    if(isClosed)
-    {
-        for(unsigned int i=0;i<screenPositions.size()-2;i++)
+    lines.clear();
+   // if(isClosed)
+   // {
+        for(unsigned int i=0;i<screenPositions.size();i++)
         {
-            drawLine(screenPositions[i],screenPositions[i+1]);
+            drawLine(screenPositions[i%screenPositions.size()],screenPositions[(i+1)%screenPositions.size()]);
         }
-        drawLine(screenPositions[screenPositions.size()-1],screenPositions[0]);
-    }
-    else
-    {
-        for(unsigned int i=0;i<screenPositions.size()-1;i++)
-        {
-            drawLine(screenPositions[i],screenPositions[i+1]);
-        }
-    }
+     //   drawLine(screenPositions[screenPositions.size()-1],screenPositions[0]);
+//    }
+//    else
+//    {
+//        for(unsigned int i=0;i<screenPositions.size()-1;i++)
+//        {
+//            drawLine(screenPositions[i],screenPositions[i+1]);
+//        }
+//    }
 }
 
 void
@@ -206,6 +192,7 @@ Ranging::calculatePerimeter()
             perimeter+= getDistance(points[i],points[i+1]);
         }
     }
+    perimeter=((float)((int)((perimeter+0.005)*100 )))/100;
 }
 
 
@@ -219,46 +206,13 @@ Ranging::update()
     calculatePerimeter();
     drawLines();
 }
-//计算包围盒
-void
-Ranging::calculateobb()
+
+float
+Ranging::getAreaOfTriangle(Point p1, Point p2)
 {
-    pcl::MomentOfInertiaEstimation <pcl::PointXYZRGBA> feature_extractor;
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBA>);
-    for(unsigned int i=0;i<cloud_ptr_->getInternalCloud().size();i++)
-    {
-        cloud->push_back(cloud_ptr_->getInternalCloud()[i]);
-    }
-    feature_extractor.setInputCloud (cloud);
-    feature_extractor.compute();
-    qDebug("输入包围盒");
-    qDebug("计算特征");
-    pcl::PointXYZRGBA min_point_OBB;
-    pcl::PointXYZRGBA max_point_OBB;
-    pcl::PointXYZRGBA position_OBB;
-    Eigen::Matrix3f rotational_matrix_OBB;
-    Eigen::Vector3f major_vector, middle_vector, minor_vector;
-    Eigen::Vector3f mass_center;
-    feature_extractor.getOBB (min_point_OBB, max_point_OBB, position_OBB, rotational_matrix_OBB);
-    feature_extractor.getEigenVectors (major_vector, middle_vector, minor_vector);
-    feature_extractor.getMassCenter (mass_center);
-    center= Point(mass_center (0), mass_center (1), mass_center (2));
-    x_axis =Point(major_vector (0) + mass_center (0), major_vector (1) + mass_center (1), major_vector (2) + mass_center (2));
-    y_axis=Point(middle_vector (0) + mass_center (0), middle_vector (1) + mass_center (1), middle_vector (2) + mass_center (2));
-    z_axis=Point(minor_vector (0) + mass_center (0), minor_vector (1) + mass_center (1), minor_vector (2) + mass_center (2));
-}
-
-Point
-Ranging::calculateNormal(Point p1, Point p2, Point o)
-{
-    Point point;
-    point.x = ( (p2.y-p1.y)*(o.z-p1.z)-(p2.z-p1.z)*(o.y-p1.y) );
-
-    point.y = ( (p2.z-p1.z)*(o.x-p1.x)-(p2.x-p1.x)*(o.z-p1.z) );
-
-    point.z = ( (p2.x-p1.x)*(o.y-p1.y)-(p2.y-p1.y)*(o.x-p1.x) );
-    return point;
-
+    Point p=calculateCrossProduct(p1,p2);
+    float triangleArea=sqrt(p1.x*p.x+p.y*p.y+p.z*p.z)/2;
+    return triangleArea;
 }
 
 Point
@@ -280,14 +234,6 @@ Ranging::getProjectPoint(Point normal, Point original, Point p)
     projectionPoint.y= p.y+normal.y*t;
     projectionPoint.z= p.z+normal.z*t;
     return projectionPoint;
-}
-
-void
-Ranging::whichPlane()//只有当图形闭合的时候才判断在哪个平面上,但是首先要计算在各个轴上的投影的面积,当投影面积最大的时候,才能判断在哪个平面上
-{
-    if(!isClosed)
-        return;
-    //TODO:计算面积,并确定在哪个平面上.
 }
 
 void

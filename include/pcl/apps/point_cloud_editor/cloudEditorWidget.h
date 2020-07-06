@@ -40,6 +40,7 @@
 
 #pragma once
 
+#include <pcl/apps/point_cloud_editor/crackidentity.h>
 #include <pcl/apps/point_cloud_editor/localTypes.h>
 #include <pcl/apps/point_cloud_editor/common.h>
 #include <pcl/apps/point_cloud_editor/commandQueue.h>
@@ -57,10 +58,15 @@
 #include <functional>
 #include <QPainter>
 #include <QPaintEvent>
-#include <pcl/apps/point_cloud_editor/octreesearch.h>
+#include <pcl/apps/point_cloud_editor/kdtreesearch.h>
 #include <QLine>
 #include <QList>
 #include <pcl/apps/point_cloud_editor/interactive_panel.h>
+#include <pcl/apps/point_cloud_editor/recognition.h>
+#include <pcl/apps/point_cloud_editor/qrcodelocate.h>
+#include <pcl/apps/point_cloud_editor/boundaryestimation.h>
+#include <pcl/apps/point_cloud_editor/euclideanseg.h>
+#include <pcl/apps/point_cloud_editor/crackidentityform.h>
 
 /// @brief class declaration for the widget for editing and viewing
 /// point clouds.
@@ -85,14 +91,14 @@ public:
     void
     initTimer();
 
-    void
-    displayZValue(bool isChecked);
 
 public Q_SLOTS:
     /// @brief Loads a new cloud.
     void
     load ();
 
+    void
+    loadqrcode();
     /// @brief Saves a cloud to a .pcd file. The current format is ASCII.
     void
     save ();
@@ -134,13 +140,13 @@ public Q_SLOTS:
     void
     interatact();
 
-//    ///@brief 显示配准的面板
-//    void
-//    showInteractivePanel();
+    //    ///@brief 显示配准的面板
+    //    void
+    //    showInteractivePanel();
 
     ///@brief 测距
     void
-    range();
+    range(bool isChecked);
 
     /// @brief Inverts the current selection.
     void
@@ -228,7 +234,12 @@ public Q_SLOTS:
 
     /// @brief Turn on the dialog box showing the statistics of the cloud.
     void
-    showStat ();
+    showStat();
+
+
+    void
+    display_boundary(bool isChecked);
+
     void
     move();
 
@@ -241,14 +252,28 @@ public Q_SLOTS:
     void
     extracting();
 
-    //    void
-    //    displayZValueTag();
+    void
+    recognition(int model);
 
-    //    void
-    //    createLabel();
+    void
+    recognize_SACMODEL_PLANE();
 
-    //    void
-    //    updateLabels();
+
+    void
+    recognize_SACMODEL_CIRCLE2D ();
+
+    void
+    recognize_SACMODEL_SPHERE();
+
+    void
+    recognize_SACMODEL_CYLINDER();
+
+    ///裂缝识别
+    void
+    crackIdentity();
+    void
+    displayZValue(bool isChecked);
+
 
 protected:
     /// initializes GL
@@ -313,11 +338,24 @@ private:
     void
     ChangeText();
 
-    void
-    drawLine();
+    float
+    getDistance(Point3D point1,Point3D point2);
 
     void
     createPanel();
+
+    //给曲线分类
+    void
+    sortLine(std::vector<unsigned int> points);
+
+    void
+    calculateBoundaries(Cloud3D& cloud);
+
+    void
+    test();
+
+    void
+    initPtrs(CloudPtr& cloud);
 
     void
     ShowAreaAndPerimeter();
@@ -331,7 +369,13 @@ private:
             return lhs.compare(rhs) < 0;
         }
     };
+
+    bool isShowBoundary=false;
+
+    std::vector<unsigned int> boundaries;
     QList<QLine> lines;
+
+    std::vector<std::vector<int>> curves;
 
     using FileLoadFunc = std::function<void (CloudEditorWidget*, const std::string&)>;
     using FileLoadMap = std::map<std::string, FileLoadFunc, ExtCompare>;
@@ -368,11 +412,15 @@ private:
 
     boost::shared_ptr<Ranging> ranging;
 
-    boost::shared_ptr<OctreeSearch> octreesearch;
+    boost::shared_ptr<KdtreeSearch> kdtreeSearch;
 
     boost::shared_ptr<Converter> converter;
 
     boost::shared_ptr<HightLightPoints> highlight;
+
+    boost::shared_ptr<Recognition> recognition_ptr;
+
+    boost::shared_ptr<QRCodeLocater> qrCodeLocater_ptr;
     /// The camera field of view
     double cam_fov_;
 
@@ -399,6 +447,8 @@ private:
     bool isbuttonchecked=false;
     using KeyMapFunc = std::function<void (CloudEditorWidget*)>;
 
+    float distance=0.01f;
+
     /// map between pressed key and the corresponding functor
     std::map<int, KeyMapFunc> key_map_;
 
@@ -407,8 +457,11 @@ private:
 
     Interactive_Panel *panel;
 
-
     int stop_x;
     int stop_y;
     QPointF screen_pos;
+
+    Cloud3D::Ptr cloud_orig;
+
+    std::vector<unsigned int> crackindicies;//裂缝的索引
 };
