@@ -67,6 +67,23 @@
 #include <pcl/apps/point_cloud_editor/boundaryestimation.h>
 #include <pcl/apps/point_cloud_editor/euclideanseg.h>
 #include <pcl/apps/point_cloud_editor/crackidentityform.h>
+#include <pcl/apps/point_cloud_editor/groundfilter.h>
+#include <pcl/apps/point_cloud_editor/groundfilterform.h>
+
+ enum SelectState
+{
+    Move,
+    Zoom,
+    View
+};
+
+ enum CheckPointState
+ {
+     check1st,
+     check2nd,
+     checkboth,
+     nocheckboth,
+ };
 
 /// @brief class declaration for the widget for editing and viewing
 /// point clouds.
@@ -86,10 +103,15 @@ public:
     /// @param filename The name of the point cloud file to be loaded.
     /// @remarks throws if the passed file can not be loaded.
     void
-    loadFile(const std::string &filename);
+    loadFile(const std::string &filename,CloudPtr &cloud_ptr_,
+             PclCloudPtr &pcl_cloud_ptr);
 
     void
     initTimer();
+
+    void
+    changeCloudPtr();
+
 
 
 public Q_SLOTS:
@@ -270,10 +292,25 @@ public Q_SLOTS:
 
     ///裂缝识别
     void
-    crackIdentity();
+    crackIdentity(bool isChecked);
     void
     displayZValue(bool isChecked);
 
+    void
+    groundSeg();
+
+    void
+    editPointCloud();
+
+    void SaveEditPointCloud();
+
+    void
+    EditCancel();
+
+
+
+    void
+    changePtr(int i,bool ischecked);
 
 protected:
     /// initializes GL
@@ -313,7 +350,8 @@ private:
     /// @param filename The name of the pcd file to be loaded.
     /// @remarks throws if the passed file can not be loaded.
     void
-    loadFilePCD(const std::string &filename);
+    loadFilePCD(const std::string &filename,CloudPtr &cloud,
+                PclCloudPtr &pcl_cloud_ptr);
     
     /// @brief Adds all of our file loader functions to the extension map
     void
@@ -341,8 +379,6 @@ private:
     float
     getDistance(Point3D point1,Point3D point2);
 
-    void
-    createPanel();
 
     //给曲线分类
     void
@@ -386,7 +422,7 @@ private:
     /// a pointer to the cloud being edited.
     CloudPtr cloud_ptr_;
 
-
+    CloudPtr cloud_ptr_temp;
     /// The display size, in pixels, of the cloud points
     unsigned int point_size_;
 
@@ -398,6 +434,8 @@ private:
     boost::shared_ptr<ToolInterface> tool_ptr_;
 
     boost::shared_ptr<ToolInterface> tool_ptr_temp;
+
+    boost::shared_ptr<ToolInterface> tool_ptr_edit_pointcloud;
 
     /// a pointer to the selection object
     SelectionPtr selection_ptr_;
@@ -445,6 +483,9 @@ private:
 
     bool isdisplaychecked=false;
     bool isbuttonchecked=false;
+    bool isSelectEditPointCloud=false;
+    bool isCheck1stPointCloud=false;
+    bool isCheck2ndPointCloud=false;
     using KeyMapFunc = std::function<void (CloudEditorWidget*)>;
 
     float distance=0.01f;
@@ -463,5 +504,22 @@ private:
 
     Cloud3D::Ptr cloud_orig;
 
-    std::vector<unsigned int> crackindicies;//裂缝的索引
+
+    PclCloudPtr pcl_cloud_ptr_orig;
+
+    PclCloudPtr pcl_cloud_ptr_temp;
+
+    IndexVector crackindicies;//裂缝的索引
+
+    bool rangeChecked=false;//显示面积周长开关
+
+    bool isEditPointCloud=false;
+
+    SelectState state=View  ;
+
+    //编辑点云时候的选择状态,默认两个都没选中.
+    CheckPointState checkstate=nocheckboth;
+
+    QString obj1name,obj2name;
+
 };

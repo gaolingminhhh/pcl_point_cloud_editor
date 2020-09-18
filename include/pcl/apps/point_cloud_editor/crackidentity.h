@@ -29,10 +29,8 @@
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc/imgproc_c.h>
 #include <pcl/apps/point_cloud_editor/localTypes.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
-#define BIG_DATA_POINT_LIMIT 35000
-#define PI 3.14159265
-#define CELL_FACTOR 3
 //#define round(x) ((x < 0) ? (ceil((x)-0.5)) : (floor((x) + 0.5)))
 #define MINCRACKDEPTH  2//裂缝的最浅深度
 //#define KNumbersNeighborOfEdge 30//7-120
@@ -40,14 +38,18 @@
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr cloudRGB2GRAY(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud) ;
 pcl::PointCloud<pcl::PointXYZI>::Ptr cloudRGB2S(Cloud3D::Ptr cloud);
-Eigen::Matrix4f CreateRotateMatrix(Eigen::Vector3f before,Eigen::Vector3f after);
 std::vector<unsigned int> getIntensityIndicies(const Cloud3D::Ptr& cloud_orig );
 Point3D findNearestPointsZDepth(std::vector<Point3D> &points);
 std::vector<unsigned int> getEdgeIndex(const Cloud3D::Ptr& cloud,int knumbersneighborofedge);
 std::vector<unsigned int> getColorChangedIndex(const Cloud3D::Ptr& cloud,int knumbersneighborofcolor);
-//std::vector<unsigned int> crackdetect(const Cloud3D::Ptr& cloud,int knumbersneighborofcolor,int knumbersneighborofedge );
-void crackdetect(const Cloud3D::Ptr& cloud,int k,float thresh,Cloud3D::Ptr& cloud_filtered);
+std::vector<unsigned int> crackdetect(const Cloud3D::Ptr& cloud,int knumbersneighborofcolor,int knumbersneighborofedge );
+//void crackdetect(const Cloud3D::Ptr& cloud,int k,float thresh,Cloud3D::Ptr& cloud_filtered);
+void removeOutlier(Cloud3D::Ptr& cloud,pcl::PointIndices& pointindices);
+void transformCloudPoint(const Cloud3D::Ptr& inputCloud,Cloud3D::Ptr& rotatedGround);
+float cal_avg_depth(Cloud3D::Ptr& inputCloud);
+Eigen::Vector3f getPlane(Cloud3D::Ptr& cloud);
+Eigen::Matrix4f CreateRotateMatrix(Eigen::Vector3f before,Eigen::Vector3f after);
 
-
+bool isNeighbor(Point3D point,Cloud3D::Ptr cloud);
 
 #endif // CRACKIDENTITY_H

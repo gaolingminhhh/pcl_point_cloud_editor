@@ -76,6 +76,7 @@
 #include <QVBoxLayout>
 #include <pcl/apps/point_cloud_editor/interactive_panel.h>
 #include <set>
+#include <pcl/apps/point_cloud_editor/editpanel.h>
 
 CloudEditorWidget::CloudEditorWidget (QWidget *parent)
     : QGLWidget(QGLFormat(QGL::DoubleBuffer | QGL::DepthBuffer |
@@ -93,12 +94,87 @@ CloudEditorWidget::CloudEditorWidget (QWidget *parent)
     // showGif();
 }
 
+void
+CloudEditorWidget::editPointCloud()
+{
+    QString file_path = QFileDialog::getOpenFileName(this, tr("Open File"),".","point cloud data(*.pcd)");
+    if (file_path.isEmpty())
+        return;
+    try
+    {
+        loadFile(file_path.toStdString(),cloud_ptr_temp,
+                 pcl_cloud_ptr_temp);
+
+    }
+    catch (...)
+    {
+        QMessageBox::information(this, tr("Point Cloud Editor"),
+                                 tr("Can not load %1.").arg(file_path));
+    }
+    //新建面板,里面包含两个对象,一个是原来的点云文件,一个是刚刚打开的点云文件
+    QStringList list=file_path.split("/");
+    obj2name=list[list.size()-1];
+    EditPanel *editpanel=new EditPanel(obj1name,obj2name,this);//(QString("原始点云"),QString("新增点云"),this);
+    editpanel->setCloudEditorWidget(this);
+    editpanel->raise();
+    editpanel->setWindowFlags(editpanel->windowFlags() | Qt::WindowStaysOnTopHint);
+    editpanel->show();
+    tool_ptr_edit_pointcloud =
+            boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud_ptr_temp));
+
+    update();
+    updateGL();
+}
+
+
+void
+CloudEditorWidget::changePtr(int i,bool isChecked)
+{
+    tool_ptr_edit_pointcloud=
+            boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud_ptr_temp));
+
+    isSelectEditPointCloud=true;
+
+    //当前选择的状态
+    if(i==0&&isChecked)
+        isCheck1stPointCloud=true;
+    if(i==0&&!isChecked)
+        isCheck1stPointCloud=false;
+    if(i==1&&isChecked)
+        isCheck2ndPointCloud=true;
+    if(i==1&&!isChecked)
+        isCheck2ndPointCloud=false;
+
+    //判断选择状态
+    if(isCheck1stPointCloud&&!isCheck2ndPointCloud)
+        checkstate=check1st;
+    else if(isCheck1stPointCloud&&isCheck2ndPointCloud)
+        checkstate=checkboth;
+    else if(!isCheck1stPointCloud&&isCheck2ndPointCloud)
+        checkstate=check2nd;
+    else
+        checkstate=nocheckboth;
+
+    switch (state) {
+    case Zoom:
+        zoom();
+        break;
+    case Move:
+        move();
+        break;
+    default:
+        view();
+        break;
+    }
+}
+
 CloudEditorWidget::~CloudEditorWidget ()
 {
 }
 
 void
-CloudEditorWidget::loadFile(const std::string &filename)
+CloudEditorWidget::loadFile(const std::string &filename,CloudPtr &cloud_ptr,
+                            PclCloudPtr &pcl_cloud_ptr)
 {
     //  std::string ext = filename.substr(filename.find_last_of('.')+1);
     std::string ext = ".pcd";
@@ -107,27 +183,37 @@ CloudEditorWidget::loadFile(const std::string &filename)
     if (it != cloud_load_func_map_.end())
         (it->second)(this, filename);
     else
-        loadFilePCD(filename);
+        loadFilePCD(filename,cloud_ptr,pcl_cloud_ptr);
 }
 
 void
 CloudEditorWidget::load ()
 {
     QString file_path = QFileDialog::getOpenFileName(this, tr("Open File"),".","point cloud data(*.pcd)");
-
+    qDebug()<<file_path;
     if (file_path.isEmpty())
         return;
     try
     {
-        loadFile(file_path.toStdString());
+        loadFile(file_path.toStdString(),cloud_ptr_,pcl_cloud_ptr_orig);
     }
     catch (...)
     {
         QMessageBox::information(this, tr("Point Cloud Editor"),
                                  tr("Can not load %1.").arg(file_path));
     }
+    initPtrs(cloud_ptr_);
+    if(cloud_ptr_)
+        qDebug()<<"cloud_ptr 不为空";
+    else
+        qDebug()<<"cloud_ptr 为空";
+    QStringList list=file_path.split("/");
+    obj1name=list[list.size()-1];
+
+    qDebug()<<"this : "<<obj1name;
     update();
     updateGL();
+    isEditPointCloud=true;
 }
 
 void
@@ -148,18 +234,9 @@ CloudEditorWidget::save(const Cloud3D &cloud)
 {
     if(cloud.size()==0)
         return;
-    qDebug("开始保存");
     saveFiles(cloud);
 
 }
-
-void
-CloudEditorWidget::createPanel()
-{
-
-}
-
-
 
 void
 CloudEditorWidget::saveFiles(const Cloud3D &cloud)
@@ -171,7 +248,6 @@ CloudEditorWidget::saveFiles(const Cloud3D &cloud)
     Cloud3D cloud3d=cloud;
     if ( (file_path_std.empty()) || (cloud.size()==0) )
         return;
-    qDebug()<<file_path;
     if (is_colored_)
     {
         // the swapping is due to the strange alignment of r,g,b values used by PCL..
@@ -289,10 +365,16 @@ CloudEditorWidget::saveExtractingFile()
 void
 CloudEditorWidget::view ()
 {
-    if (!cloud_ptr_)
+    if (!cloud_ptr_){
         return;
+    }
     tool_ptr_ = boost::shared_ptr<CloudTransformTool>(
                 new CloudTransformTool(cloud_ptr_));
+    if(isSelectEditPointCloud)
+        tool_ptr_edit_pointcloud = boost::shared_ptr<CloudTransformTool>(
+                    new CloudTransformTool(cloud_ptr_temp));
+
+    state=View;
 }
 
 void
@@ -408,10 +490,15 @@ CloudEditorWidget::range(bool isChecked)
 {
     if(!cloud_ptr_)
         return;
-    if(isChecked)
+    rangeChecked=isChecked;
+    if(isChecked){
         tool_ptr_=ranging;
-    //  else
-    //   ranging->reset();
+    }
+    else
+    {
+        ranging->reset();
+        update();
+    }
 }
 
 void
@@ -488,12 +575,14 @@ CloudEditorWidget::transform ()
 void
 CloudEditorWidget::zoom()
 {
-    if (!cloud_ptr_)
-        return;
+    if (!cloud_ptr_){
+        return;}
     tool_ptr_ = boost::shared_ptr<CloudTransformTool>(
                 new CloudTransformTool(cloud_ptr_));
     tool_ptr_->zoom();
-
+    if(isSelectEditPointCloud)
+        tool_ptr_edit_pointcloud->zoom();
+    state=Zoom;
 }
 
 void
@@ -517,12 +606,14 @@ CloudEditorWidget::test()
 void
 CloudEditorWidget::move()
 {
-    if (!cloud_ptr_)
-        return;
+    if (!cloud_ptr_){
+        return;}
     tool_ptr_ = boost::shared_ptr<CloudTransformTool>(
                 new CloudTransformTool(cloud_ptr_));
     tool_ptr_->move();
-
+    if(isSelectEditPointCloud)
+        tool_ptr_edit_pointcloud->move();
+    state=Move;
 }
 
 
@@ -546,12 +637,12 @@ CloudEditorWidget::calculateBoundaries(Cloud3D& cloud_)
     //    //  vector<unsigned int> boundaries;
     //    for(int i=0;i<segments.size();i++)
     //    {
-  //  vector<unsigned int> boundariesIndex=BoundaryEstimation::getBoundary(segments[i]);
-   boundaries=BoundaryEstimation::getBoundary(cloud_);
-//    for(int j=0;j<boundariesIndex.size();j++)
-//    {
-//        boundaries.push_back(segmentsIndex[i]+boundariesIndex[j]);
-//    }
+    //  vector<unsigned int> boundariesIndex=BoundaryEstimation::getBoundary(segments[i]);
+    boundaries=BoundaryEstimation::getBoundary(cloud_);
+    //    for(int j=0;j<boundariesIndex.size();j++)
+    //    {
+    //        boundaries.push_back(segmentsIndex[i]+boundariesIndex[j]);
+    //    }
 
 
     //    }
@@ -567,14 +658,15 @@ CloudEditorWidget::display_boundary(bool isChecked)
     if(isChecked)
     {
         calculateBoundaries(*(cloud_ptr_->getCloud3DPtr()));
+        qDebug()<<"找到了边界点";
         highlight->highlightpoints(boundaries);
-        isShowBoundary=true;
     }
     else{
         highlight->dishighlight(boundaries);
-        isShowBoundary=false;
     }
+    isShowBoundary=isChecked;
     qDebug()<<"is checked "<<isShowBoundary;
+    update();
 }
 
 void
@@ -613,7 +705,6 @@ CloudEditorWidget::sortLine(std::vector<unsigned int> points)
             curves.push_back(curven);
             points.erase(points.begin());
         }
-
     }
     qDebug()<<"points.size() "<<points.size();
     qDebug()<<"曲线数量"<<curves.size();
@@ -634,7 +725,10 @@ CloudEditorWidget::getDistance(Point3D point1, Point3D point2)
 void
 CloudEditorWidget::onMouseStopMove()
 {
-    displayDepthValue->getDepthValue(stop_x,stop_y,screen_pos,converter);
+    if(isdisplaychecked)
+    {
+        displayDepthValue->getDepthValue(stop_x,stop_y,screen_pos,converter);
+    }
 }
 
 void
@@ -645,15 +739,17 @@ CloudEditorWidget::displayZValue(bool isChecked)
         return;
     if(isChecked){
         setMouseTracking(true);//如果被选中 开始计时
-        displayDepthValue=boost::shared_ptr<DisplayDepthValue>(new DisplayDepthValue());
+        //    displayDepthValue=boost::shared_ptr<DisplayDepthValue>(new DisplayDepthValue());
     }
     else
     {
-        displayDepthValue.reset();
+        //  displayDepthValue.reset();
         setMouseTracking(false);
     }
     isbuttonchecked=true;
     isdisplaychecked=isChecked;
+    qDebug()<<"display is checked:"<<isChecked;
+    update();
 }
 
 void
@@ -675,26 +771,67 @@ CloudEditorWidget::denoise ()
 }
 
 void
-CloudEditorWidget::crackIdentity()
+CloudEditorWidget::crackIdentity(bool isChecked)
 {
     if(!cloud_ptr_)
         return;
 
 
-    Cloud3D::Ptr cloud_crack(new Cloud3D);
-    //高亮显示
-    CrackIdentityForm form;
+    if(isChecked){
+        Cloud3D::Ptr cloud_crack(new Cloud3D);
+        //高亮显示
+        //        CrackIdentityForm form;
+        //        form.exec();
+        //        // check for cancel.
+        //        if (!form.ok())
+        //        {
+        //            return;
+        //        }
+
+        // Cloud3D::Ptr cloud_temp(new Cloud3D);
+        // pcl::copyPointCloud(*cloud_ptr_->getCloud3DPtr(),*cloud_temp);
+        qDebug()<<"开始进行裂缝检测";
+
+        //  crackindicies= crackdetect(cloud_ptr_->getCloud3DPtr(),form.getknumbersneighborofcolor(), form.getknumbersneighborofedge());
+        crackindicies= crackdetect(cloud_ptr_->getCloud3DPtr(),10, 10);
+
+        qDebug()<<crackindicies.size();
+        if(crackindicies.size()==0){
+            QMessageBox::information(this, tr("点云编辑器"),
+                                     tr("没有发现裂缝."));
+        }
+        else
+        {
+            highlight->highlightpoints(crackindicies);
+        }
+    }
+    else{
+        highlight->dishighlight(crackindicies);
+    }
+    update();
+}
+
+void
+CloudEditorWidget::groundSeg()
+{
+    if(!cloud_ptr_)
+        return;
+    GroundFilterForm  form;
     form.exec();
-    // check for cancel.
-    if (!form.ok())
+    if(!form.ok())
     {
         return;
     }
-    crackdetect(cloud_ptr_->getCloud3DPtr(),form.getK(),form.getThresh(),cloud_crack);
-    cloud_ptr_= CloudPtr(new Cloud(*cloud_crack, false));;
+    qDebug()<<"打开对话框了";
+
+    Cloud3D::Ptr cloud_temp(new Cloud3D);
+    Cloud3D::Ptr cloud_ground(new Cloud3D);
+    pcl::copyPointCloud(*cloud_ptr_->getCloud3DPtr(),*cloud_temp);
+    groundFilter(cloud_temp,form.getisbuilding(),form.getisforest(),cloud_ground);
+    cloud_ptr_= CloudPtr(new Cloud(*cloud_ground, false));
 
     initPtrs(cloud_ptr_);
-    update();
+
 }
 
 void
@@ -805,9 +942,37 @@ CloudEditorWidget::ChangeText()
             QPoint qpoint = converter->getScreenPosValue(point);
             renderText(qpoint.x(),qpoint.y(),QString::number(cloud_ptr_->getInternalCloud()[vector[i]].z));
         }
+        qDebug()<<"今天周五";
     }
 
     isbuttonchecked=false;
+}
+
+void
+CloudEditorWidget::EditCancel()
+{
+    isSelectEditPointCloud=false;
+    checkstate=nocheckboth;
+    cloud_ptr_temp.reset();
+    qDebug()<<"关闭";
+}
+
+void
+CloudEditorWidget::SaveEditPointCloud()
+{
+    Point3DVector vec;
+  //  cloud_ptr_->getObjectSpacePoints(vec);
+   // cloud_ptr_temp->getObjectSpacePoints(vec);
+    cloud_ptr_->getDisplaySpacePoints(vec);
+    cloud_ptr_temp->getDisplaySpacePoints(vec);
+    Cloud3D cloud;
+    cloud.width = vec.size();
+    cloud.height = 1;
+    for(int i=0;i<vec.size();i++)
+    {
+        cloud.points.push_back(vec[i]);
+    }
+    save(cloud);
 }
 
 void
@@ -895,8 +1060,10 @@ CloudEditorWidget::paintGL ()
     glLoadIdentity();
     if (!cloud_ptr_)
         return;
-    tool_ptr_ -> draw();
-
+    tool_ptr_ -> draw();;
+    if(isSelectEditPointCloud){
+        tool_ptr_edit_pointcloud->draw();
+    }
     if (color_scheme_ == COLOR_BY_RGB)
         cloud_ptr_->drawWithRGB();
     else if (color_scheme_ == COLOR_BY_PURE)
@@ -908,6 +1075,11 @@ CloudEditorWidget::paintGL ()
         cloud_ptr_ -> setColorRampAxis(Axis(color_scheme_));
         cloud_ptr_ -> drawWithTexture();
     }
+    if(cloud_ptr_temp)
+    {
+        cloud_ptr_temp->drawWithRGB();
+    }
+    //cloud_ptr_temp->drawWithRGB();
     ChangeText();
     ShowAreaAndPerimeter();
 }
@@ -918,8 +1090,10 @@ void CloudEditorWidget::ShowAreaAndPerimeter()
         return;
     QFont font = QFont("Arial");
     font.setPointSize(20);
-    renderText(0,40,QString("面积:").append(QString::number( tool_ptr_->area)).append(" m2"),font);
-    renderText(0,80,QString("周长:").append(QString::number( tool_ptr_->perimeter)).append("m"),font);
+    if(rangeChecked){
+        renderText(0,40,QString("面积:").append(QString::number( tool_ptr_->area)).append(" m2"),font);
+        renderText(0,80,QString("周长:").append(QString::number( tool_ptr_->perimeter)).append("m"),font);
+    }
 }
 
 void
@@ -939,15 +1113,44 @@ CloudEditorWidget::mousePressEvent (QMouseEvent *event)
 {
     if (!tool_ptr_)
         return;
-    tool_ptr_ -> start(event -> x(), event -> y(),
-                       event -> modifiers(), event -> buttons());
+    //    tool_ptr_ -> start(event -> x(), event -> y(),
+    //                       event -> modifiers(), event -> buttons());
+    //    tool_ptr_edit_pointcloud -> start(event -> x(), event -> y(),
+    //                                      event -> modifiers(), event -> buttons());
 
+
+    if(!isSelectEditPointCloud)
+    {
+        tool_ptr_ -> start(event -> x(), event -> y(),
+                           event -> modifiers(), event -> buttons());
+    }
+    switch(checkstate)
+    {
+    case check1st:
+        tool_ptr_ -> start(event -> x(), event -> y(),
+                           event -> modifiers(), event -> buttons());
+        break;
+    case check2nd:
+
+        tool_ptr_edit_pointcloud -> start(event -> x(), event -> y(),
+                                          event -> modifiers(), event -> buttons());
+        break;
+    case checkboth:
+        tool_ptr_ -> start(event -> x(), event -> y(),
+                           event -> modifiers(), event -> buttons());
+        tool_ptr_edit_pointcloud -> start(event -> x(), event -> y(),
+                                          event -> modifiers(), event -> buttons());
+        break;
+    case nocheckboth:
+        break;
+    }
     if(tool_ptr_temp)
         tool_ptr_temp -> start(event -> x(), event -> y(),
                                event -> modifiers(), event -> buttons());
 
     update();
     updateGL();
+
 }
 
 void
@@ -955,15 +1158,45 @@ CloudEditorWidget::mouseMoveEvent (QMouseEvent *event)
 {
     //if (!tool_ptr_&&!displayDepthValue)
     // return;
-    if(tool_ptr_){
-        tool_ptr_ -> update(event -> x(), event -> y(),
-                            event -> modifiers(), event -> buttons());
+    //    if(tool_ptr_){
+    //        tool_ptr_ -> update(event -> x(), event -> y(),
+    //                            event -> modifiers(), event -> buttons());
+    //    }
+    //    if(tool_ptr_edit_pointcloud){
+    //        tool_ptr_edit_pointcloud -> update(event -> x(), event -> y(),
+    //                                           event -> modifiers(), event -> buttons());
 
-    }
+    //    }
 
     if(tool_ptr_temp)
         tool_ptr_temp -> update(event -> x(), event -> y(),
                                 event -> modifiers(), event -> buttons());
+
+    if(!isSelectEditPointCloud)
+    {
+        tool_ptr_ -> update(event -> x(), event -> y(),
+                            event -> modifiers(), event -> buttons());
+    }
+    switch(checkstate)
+    {
+    case check1st:
+        tool_ptr_ -> update(event -> x(), event -> y(),
+                            event -> modifiers(), event -> buttons());
+        break;
+    case check2nd:
+
+        tool_ptr_edit_pointcloud -> update(event -> x(), event -> y(),
+                                           event -> modifiers(), event -> buttons());
+        break;
+    case checkboth:
+        tool_ptr_ -> update(event -> x(), event -> y(),
+                            event -> modifiers(), event -> buttons());
+        tool_ptr_edit_pointcloud -> update(event -> x(), event -> y(),
+                                           event -> modifiers(), event -> buttons());
+        break;
+    case nocheckboth:
+        break;
+    }
 
     if(displayDepthValue)
     {
@@ -982,9 +1215,38 @@ CloudEditorWidget::mouseReleaseEvent (QMouseEvent *event)
 {
     if (!tool_ptr_)
         return;
-    tool_ptr_ -> end(event -> x(), event -> y(),
-                     event -> modifiers(), event -> button());
+    //    tool_ptr_ -> end(event -> x(), event -> y(),
+    //                     event -> modifiers(), event -> button());
+    //    if(tool_ptr_edit_pointcloud)
+    //        tool_ptr_edit_pointcloud -> end(event -> x(), event -> y(),
+    //                                        event -> modifiers(), event -> button());
+    switch(checkstate)
+    {
+    case check1st:
+        tool_ptr_ -> end(event -> x(), event -> y(),
+                         event -> modifiers(), event -> button());
+        break;
+    case check2nd:
 
+        tool_ptr_edit_pointcloud -> end(event -> x(), event -> y(),
+                                        event -> modifiers(), event -> button());
+        break;
+    case checkboth:
+        tool_ptr_ -> end(event -> x(), event -> y(),
+                         event -> modifiers(), event -> button());
+        tool_ptr_edit_pointcloud -> end(event -> x(), event -> y(),
+                                        event -> modifiers(), event -> button());
+        break;
+    case nocheckboth:
+        break;
+    }
+
+
+    if(!isSelectEditPointCloud)
+    {
+        tool_ptr_ -> end(event -> x(), event -> y(),
+                         event -> modifiers(), event -> button());
+    }
 
     if(tool_ptr_temp)
         tool_ptr_temp -> end(event -> x(), event -> y(),
@@ -1021,9 +1283,9 @@ CloudEditorWidget::keyPressEvent (QKeyEvent *event)
 
 
 void
-CloudEditorWidget::loadFilePCD(const std::string &filename)
+CloudEditorWidget::loadFilePCD(const std::string &filename,CloudPtr &cloud,
+                               PclCloudPtr &pcl_cloud_ptr)
 {
-    PclCloudPtr pcl_cloud_ptr;
     Cloud3D tmp;
     if (pcl::io::loadPCDFile<Point3D>(filename, tmp) == -1)
         throw;
@@ -1031,31 +1293,11 @@ CloudEditorWidget::loadFilePCD(const std::string &filename)
     std::vector<int> index;
     pcl::removeNaNFromPointCloud(*pcl_cloud_ptr, *pcl_cloud_ptr, index);
     Statistics::clear();
-    cloud_ptr_ = CloudPtr(new Cloud(*pcl_cloud_ptr, true));
-    cloud_orig=pcl_cloud_ptr;
-    selection_ptr_ = SelectionPtr(new Selection(cloud_ptr_, true));
-    copy_buffer_ptr_ = CopyBufferPtr(new CopyBuffer(true));
-    cloud_ptr_->setPointSize(point_size_);
-    cloud_ptr_->setHighlightPointSize(selected_point_size_);
-    if(isShowBoundary){
-        display_boundary(true);
-    }
-    // qDebug()<<isShowBoundary;
-    //    highlight=boost::shared_ptr<HightLightPoints>(new HightLightPoints(cloud_ptr_,selection_ptr_));
-    //    recognition_ptr=boost::shared_ptr<Recognition>(new Recognition(cloud_ptr_));
-    //    tool_ptr_ =
-    //            boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud_ptr_));
-    //    converter=boost::shared_ptr<Converter>(new Converter(cloud_ptr_,highlight));
-    //    //test();
-    //    //   ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
-    //    //  kdtreeSearch=boost::shared_ptr<kdtreeSearch>(new kdtreeSearch(cloud_ptr_));
-    //    ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
-
-    initPtrs(cloud_ptr_);
+    cloud = CloudPtr(new Cloud(*pcl_cloud_ptr, true));
 
     if (isColored(filename))
     {
-        swapRBValues(cloud_ptr_);
+        swapRBValues(cloud);
         color_scheme_ = COLOR_BY_RGB;
         is_colored_ = true;
     }
@@ -1070,15 +1312,23 @@ CloudEditorWidget::loadFilePCD(const std::string &filename)
 void
 CloudEditorWidget::initPtrs(CloudPtr &cloud)
 {
+    selection_ptr_ = SelectionPtr(new Selection(cloud, true));
+    copy_buffer_ptr_ = CopyBufferPtr(new CopyBuffer(true));
+    cloud->setPointSize(point_size_);
+    cloud->setHighlightPointSize(selected_point_size_);
+    if(isShowBoundary){
+        display_boundary(true);
+    }
     highlight=boost::shared_ptr<HightLightPoints>(new HightLightPoints(cloud,selection_ptr_));
     recognition_ptr=boost::shared_ptr<Recognition>(new Recognition(cloud));
     tool_ptr_ =
             boost::shared_ptr<CloudTransformTool>(new CloudTransformTool(cloud));
     converter=boost::shared_ptr<Converter>(new Converter(cloud,highlight));
     //test();
-    //   ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
+    //  ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud_ptr_,highlight));
     //  kdtreeSearch=boost::shared_ptr<kdtreeSearch>(new kdtreeSearch(cloud_ptr_));
-    //  ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud,highlight));
+    ranging=boost::shared_ptr<Ranging>(new Ranging(converter,cloud,highlight));
+    displayDepthValue=boost::shared_ptr<DisplayDepthValue>(new DisplayDepthValue());
 
 }
 
@@ -1086,7 +1336,7 @@ void
 CloudEditorWidget::initFileLoadMap()
 {
     cloud_load_func_map_.clear();//
-    cloud_load_func_map_["pcd"] = &CloudEditorWidget::loadFilePCD;
+    //  cloud_load_func_map_["pcd"] = &CloudEditorWidget::loadFilePCD;
 }
 
 bool

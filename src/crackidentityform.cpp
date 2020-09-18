@@ -5,65 +5,73 @@
 
 CrackIdentityForm::CrackIdentityForm () : ok_(false)
 {
-  k_ = new QLineEdit;
-  thresh_ = new QLineEdit;
-  button_box_ = new QDialogButtonBox;
-  button_box_->addButton(tr("取消"),
-                         QDialogButtonBox::RejectRole);
-  button_box_->addButton(tr("好"),
-                         QDialogButtonBox::AcceptRole);
-  connect(button_box_, SIGNAL(accepted()),
-          this, SLOT(accept()));
-  connect(button_box_, SIGNAL(rejected()),
-          this, SLOT(reject()));
-  layout_ = new QFormLayout;
-  layout_->addRow(tr("&邻近点数:"), k_);
-  layout_->addRow(tr("&阀值:"),
-                 thresh_);
+    knumbersneighborofcolor_ = new QLineEdit;
+    knumbersneighborofedge_ = new QLineEdit;
+    //  isBuilding_=new QCheckBox;
+    //  isForest_=new QCheckBox;
 
-  main_layout_ = new QVBoxLayout;
-  main_layout_->addLayout(layout_);
-  main_layout_->addWidget(button_box_);
-  setLayout(main_layout_);
-  setWindowTitle(tr("裂缝检测参数设置"));
+    button_box_ = new QDialogButtonBox;
+    button_box_->addButton(tr("取消"),
+                           QDialogButtonBox::RejectRole);
+    button_box_->addButton(tr("好"),
+                           QDialogButtonBox::AcceptRole);
+    connect(button_box_, SIGNAL(accepted()),
+            this, SLOT(accept()));
+    connect(button_box_, SIGNAL(rejected()),
+            this, SLOT(reject()));
+    layout_ = new QFormLayout;
+    layout_->addRow(tr("&颜色邻近点数:"), knumbersneighborofcolor_);
+    layout_->addRow(tr("&边缘邻近点数:"),
+                    knumbersneighborofedge_);
+    //  layout_->addRow(tr("&是否包含建筑物"),isBuilding_);
+    //  layout_->addRow(tr("&是否包含森林"),isForest_);
+
+    main_layout_ = new QVBoxLayout;
+    main_layout_->addLayout(layout_);
+    main_layout_->addWidget(button_box_);
+    setLayout(main_layout_);
+    setWindowTitle(tr("裂缝检测参数设置"));
 }
 
 CrackIdentityForm::~CrackIdentityForm()
 {
-  delete k_;
-  delete thresh_;
-  delete button_box_;
-  delete layout_;
-  delete main_layout_;
+    //    delete isBuilding_;
+    //    delete isForest_;
+    delete knumbersneighborofcolor_;
+    delete knumbersneighborofedge_;
+    delete button_box_;
+    delete layout_;
+    delete main_layout_;
 }
 
 void
 CrackIdentityForm::accept ()
 {
-  QString k__str = k_->text();
-  bool ok;
-  k = k__str.toInt(&ok);
-  // validates the input.
-  if (!ok)
-  {
-    ok_ = false;
-    return;
-  }
-  QString  thresh__str= thresh_->text();
-  thresh = thresh__str.toFloat(&ok);
-  if (!ok)
-  {
-    ok_ = false;
-    return;
-  }
-  this->done(0);
-  ok_ = true;
+    QString knumbersneighborofcolor_str = knumbersneighborofcolor_->text();
+    bool ok;
+    knumbersneighborofcolor = knumbersneighborofcolor_str.toInt(&ok);
+    // validates the input.
+    if (!ok)
+    {
+        ok_ = false;
+        return;
+    }
+    QString  knumbersneighborofedge_str= knumbersneighborofedge_->text();
+    knumbersneighborofedge = knumbersneighborofedge_str.toInt(&ok);
+    if (!ok)
+    {
+        ok_ = false;
+        return;
+    }
+    //TODO :判断是否为建筑物和森林的状态
+    this->done(0);
+    ok_ = true;
 }
 
 void
 CrackIdentityForm::reject ()
 {
-  ok_ = false;
-  this->done(0);
+    ok_ = false;
+    this->done(0);
 }
 

@@ -1,7 +1,8 @@
 #include <pcl/apps/point_cloud_editor/crackidentity.h>
+#include <QDebug>
+#include <cmath>
 
-
-using namespace Eigen;
+//using namespace Eigen;
 
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr cloudRGB2GRAY(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud) {
@@ -43,7 +44,8 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr cloudRGB2S(Cloud3D::Ptr cloud) {
         pointI.x = it->x;
         pointI.y = it->y;
         pointI.z = it->z;
-        pointI.intensity = temp.at<uchar>(0, 1);
+        float t=temp.at<uchar>(0, 1);
+        pointI.intensity = t;
 
         cloud_gray->push_back(pointI);
 
@@ -51,35 +53,11 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr cloudRGB2S(Cloud3D::Ptr cloud) {
     return cloud_gray;
 }
 
-
-//创建旋转矩阵
-Eigen::Matrix4f CreateRotateMatrix(Eigen::Vector3f before,Eigen::Vector3f after)
+bool isNeighbor(Point3D point,Cloud3D::Ptr cloud)
 {
-    before.normalize();
-    after.normalize();
 
-    float angle = acos(before.dot(after));
-    Eigen::Vector3f p_rotate =before.cross(after);
-    p_rotate.normalize();
-
-    Eigen::Matrix4f rotationMatrix = Eigen::Matrix4f::Identity();
-    rotationMatrix(0, 0) = cos(angle) + p_rotate[0] * p_rotate[0] * (1 - cos(angle));
-    rotationMatrix(0, 1) = p_rotate[0] * p_rotate[1] * (1 - cos(angle) - p_rotate[2] * sin(angle));//这里跟公式比多了一个括号，但是看实验结果它是对的。
-    rotationMatrix(0, 2) = p_rotate[1] * sin(angle) + p_rotate[0] * p_rotate[2] * (1 - cos(angle));
-
-
-    rotationMatrix(1, 0) = p_rotate[2] * sin(angle) + p_rotate[0] * p_rotate[1] * (1 - cos(angle));
-    rotationMatrix(1, 1) = cos(angle) + p_rotate[1] * p_rotate[1] * (1 - cos(angle));
-    rotationMatrix(1, 2) = -p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
-
-
-    rotationMatrix(2, 0) = -p_rotate[1] * sin(angle) +p_rotate[0] * p_rotate[2] * (1 - cos(angle));
-    rotationMatrix(2, 1) = p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
-    rotationMatrix(2, 2) = cos(angle) + p_rotate[2] * p_rotate[2] * (1 - cos(angle));
-
-    return rotationMatrix;
+    return true;
 }
-
 
 std::vector<unsigned int> getIntensityIndicies(const Cloud3D::Ptr& cloud_orig )
 {
@@ -110,7 +88,20 @@ std::vector<unsigned int> getIntensityIndicies(const Cloud3D::Ptr& cloud_orig )
 }
 
 
+void removeOutlier(Cloud3D::Ptr& cloud,pcl::PointIndices& pointindices)
+{
+    qDebug()<<"temp_temp size:"<<cloud->points.size();
+    pcl::StatisticalOutlierRemoval<Point3D> sor(true);
+    sor.setInputCloud (cloud);
+    sor.setMeanK (20);
+    sor.setStddevMulThresh (1.0);
+    Cloud3D cloud_temp;
+    sor.filter(cloud_temp);
+    sor.getRemovedIndices(pointindices);
+    qDebug()<<"cloud_temp size"<<cloud_temp.points.size();
+    qDebug()<<"apply filter :"<<pointindices.indices.size();
 
+}
 
 std::string intToString(int v)
 {
@@ -245,11 +236,11 @@ std::vector<unsigned int> getEdgeIndex(const Cloud3D::Ptr& cloud,int knumbersnei
         CovZZ = sum / ( NumbersNeighbor[i]-1) ;
 
         // Computing Eigenvalue and EigenVector
-        Matrix3f Cov;
+        Eigen::Matrix3f Cov;
         Cov << CovXX, CovXY, CovXZ, CovYX, CovYY, CovYZ, CovZX, CovZY, CovZZ;
 
-        SelfAdjointEigenSolver<Matrix3f> eigensolver(Cov);
-        if (eigensolver.info() != Success) abort();
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigensolver(Cov);
+        if (eigensolver.info() != Eigen::Success) abort();
 
         double EigenValue1 = eigensolver.eigenvalues()[0];
         double EigenValue2 = eigensolver.eigenvalues()[1];
@@ -315,7 +306,7 @@ std::vector<unsigned int> getEdgeIndex(const Cloud3D::Ptr& cloud,int knumbersnei
     std::vector<unsigned int> indexes;
     float step = ( ( MaxD -  MinD) / Ncolors ) ;
     for (unsigned int i = 0; i < cloud ->points.size (); ++i) {
-        if ( Sigma [i] > ( MinD + ( 8* step) ) ) {  //6*step
+        if ( Sigma [i] > ( MinD + ( 6* step) ) ) {  //6*step
 
             if(cloud->points[i].r+cloud->points[i].g+cloud->points[i].b<200){
                 indexes.push_back(i);
@@ -425,11 +416,11 @@ std::vector<unsigned int> getColorChangedIndex(const Cloud3D::Ptr& cloud,int knu
         CovZZ = sum / ( NumbersNeighbor[i]-1) ;
 
         // Computing Eigenvalue and EigenVector
-        Matrix3f Cov;
+        Eigen::Matrix3f Cov;
         Cov << CovXX, CovXY, CovXZ, CovYX, CovYY, CovYZ, CovZX, CovZY, CovZZ;
 
-        SelfAdjointEigenSolver<Matrix3f> eigensolver(Cov);
-        if (eigensolver.info() != Success) abort();
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigensolver(Cov);
+        if (eigensolver.info() != Eigen::Success) abort();
 
         double EigenValue1 = eigensolver.eigenvalues()[0];
         double EigenValue2 = eigensolver.eigenvalues()[1];
@@ -495,7 +486,7 @@ std::vector<unsigned int> getColorChangedIndex(const Cloud3D::Ptr& cloud,int knu
     std::vector<unsigned int> indexes;
     float step = ( ( MaxD -  MinD) / Ncolors ) ;
     for (unsigned int i = 0; i < cloud ->points.size (); ++i) {
-        if ( Sigma [i] > ( MinD + ( 8* step) ) ) {  //6*step
+        if ( Sigma [i] > ( MinD + ( 6* step) ) ) {  //6*step
             if(cloud->points[i].r+cloud->points[i].g+cloud->points[i].b<200){
                 indexes.push_back(i);
                 Edgepoints ++;
@@ -512,94 +503,146 @@ std::vector<unsigned int> getColorChangedIndex(const Cloud3D::Ptr& cloud,int knu
 
 
 
-//std::vector<unsigned int>
-//crackdetect(const Cloud3D::Ptr& cloud,int knumbersneighborofcolor,int knumbersneighborofedge)
-//{
-//    clock_t startTime,endTime;
-//    startTime = clock();
-//    // 提取出平面
-//    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-//    pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-//    // Create the segmentation object
-//    pcl::SACSegmentation<pcl::PointXYZRGBA> seg;
-//    // Optional
-//    seg.setOptimizeCoefficients (true);
-//    // Mandatory
-//    seg.setModelType (pcl::SACMODEL_PLANE);
-//    seg.setMethodType (pcl::SAC_RANSAC);
-//    seg.setMaxIterations(1000);
-//    seg.setDistanceThreshold (0.5);
-
-//    //pcl::io::savePCDFileBinary("No_ground.pcd", *cloud_filtered);
-//    std::vector<std::vector<int>> crackindicies;
-//    std::vector<unsigned int> indexOtsu(getIntensityIndicies(cloud));
-//    std::vector<unsigned int> indexedge(getEdgeIndex(cloud,knumbersneighborofedge));
-//    //  std::vector<unsigned int> indexcolor(getColorChangedIndex(cloud,knumbersneighborofcolor));
-//    // std::cerr<<"index edge size is "<<indexedge.size()<<std::endl;
-//    std::vector<unsigned int> result,temp;
-
-//    std::set_intersection(indexedge.begin(),indexedge.end(),indexOtsu.begin(),indexOtsu.end(),std::back_inserter(result));
-//    //    if(temp.size()!=0){
-
-//    //        std::set_intersection(temp.begin(),temp.end(),indexOtsu.begin(),indexOtsu.end(),std::back_inserter(result));
-//    ////        if(result.size()==0)
-//    ////        {
-//    ////            std::cerr<<result.size()<<std::endl;
-//    ////        }
-//    ////        else{
-//    ////            crackindicies.push_back(result);
-//    ////        }
-//    //        std::cerr<<"颜色变换值:"<<indexcolor.size()<<std::endl;
-//    //        std::cerr<<"边缘变换值"<<indexedge.size()<<std::endl;
-//    //        std::cerr<<"颜色变换值^边缘变换值"<<result.size()<<std::endl;
-//    //        //crackindicies.push_back(indexedge);
-//    //    }
-//    //    else
-//    //    {
-//    //        std::cerr<<"temp 的长度为0"<<std::endl;
-//    //    }
-
-//    endTime=clock();
-//    cout << "总共花费时间 : " <<(double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
-
-//    return result;
-//}
-
-
-void
-crackdetect(const Cloud3D::Ptr& cloud,int k,float thresh,Cloud3D::Ptr& cloud_filtered)
+std::vector<unsigned int>
+crackdetect(const Cloud3D::Ptr& cloud,int knumbersneighborofcolor,int knumbersneighborofedge)
 {
-    clock_t startTime,endTime;
-    startTime = clock();
-    // std::vector<unsigned int> indexOtsu(getIntensityIndicies(cloud));
-    pcl::PointIndices::Ptr indexOtsu(new pcl::PointIndices);
-    Cloud3D::Ptr cloud_ptr(new Cloud3D);
-    *cloud_ptr=*cloud;
-    IndexVector indices = getIntensityIndicies(cloud);
+    std::vector<unsigned int> indexOtsu(getIntensityIndicies(cloud));
+    std::vector<unsigned int> indexCrack;
+    Cloud3D::Ptr temp_ptr(new Cloud3D);
 
-    for(IndexVector::iterator iter=indices.begin();iter!=indices.end();iter++)
+    for(int i=0;i<indexOtsu.size();i++)
     {
-        indexOtsu->indices.push_back((*iter));
+        temp_ptr->points.push_back(cloud->points[indexOtsu[i]]);
     }
-    //   return indexOtsu;
+    pcl::KdTreeFLANN<Point3D> kdtree;
+    kdtree.setInputCloud(temp_ptr);
+    std::vector<int> k_indices(10);
+    std::vector<float> k_sqr_distances(10);
+    for(int i=0;i<indexOtsu.size();i++)
+    {if (kdtree.nearestKSearch(cloud->points[indexOtsu[i]], 10, k_indices, k_sqr_distances) > 0)
+        {
 
-    //TODO欧式分割
-
-    //TODO:抽取出点
-    pcl::ExtractIndices<Point3D> extract;
-    extract.setNegative(false);
-    extract.setInputCloud (cloud_ptr);
-    extract.setIndices (indexOtsu);
-    extract.filter(*cloud_filtered);
-    //TODO:移除离群点
-    pcl::StatisticalOutlierRemoval<Point3D> sor;
-    sor.setInputCloud (cloud_filtered);
-    sor.setMeanK (k);
-    sor.setStddevMulThresh (thresh);
-    sor.filter (*cloud_filtered);
-
-    endTime=clock();
-    cout << "总共花费时间 : " <<(double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
+            if(k_sqr_distances[9]<0.1f){
+                if(cloud->points[indexOtsu[i]].r<100&&cloud->points[indexOtsu[i]].g<100&&cloud->points[indexOtsu[i]].b<100)
+                    indexCrack.push_back(indexOtsu[i]);
+            }
+        }
+    }
+    return indexCrack;
 }
+
+void transformCloudPoint(const Cloud3D::Ptr& inputCloud,Cloud3D::Ptr& rotatedGround)
+{
+    Cloud3D::Ptr cloud_temp(new Cloud3D);
+
+    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+    pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+    // Create the segmentation object
+    pcl::SACSegmentation<Point3D> seg;
+    // Optional
+    seg.setOptimizeCoefficients (true);
+    // Mandatory
+    seg.setModelType (pcl::SACMODEL_PLANE);
+    seg.setMethodType (pcl::SAC_RANSAC);
+    seg.setMaxIterations(1000);
+    seg.setDistanceThreshold (0.5);
+    seg.setInputCloud (inputCloud);
+    seg.segment (*inliers, *coefficients);
+    qDebug()<<"inliers";
+    qDebug()<<inliers->indices.size();
+    std::cerr << "Model coefficients: " << coefficients->values[0] << " "
+              << coefficients->values[1] << " "
+              << coefficients->values[2] << " "
+              << coefficients->values[3] << std::endl;
+    Eigen::Vector3f before;
+    Eigen::Vector3f after;
+    before<<coefficients->values[0],coefficients->values[1],coefficients->values[2];
+    after<<0.0f,0.0f,1.0f;
+    Eigen::Matrix4f rotation=CreateRotateMatrix(before,after);
+    pcl::transformPointCloud(*inputCloud,*rotatedGround,rotation);
+    pcl::io::savePCDFileBinary("rotated.pcd",*rotatedGround);
+    *rotatedGround=*inputCloud;
+}
+
+Eigen::Matrix4f CreateRotateMatrix(Eigen::Vector3f before,Eigen::Vector3f after)
+{
+    before.normalize();
+    after.normalize();
+
+    float angle = acos(before.dot(after));
+    Eigen::Vector3f p_rotate =before.cross(after);
+    p_rotate.normalize();
+
+    Eigen::Matrix4f rotationMatrix = Eigen::Matrix4f::Identity();
+    rotationMatrix(0, 0) = cos(angle) + p_rotate[0] * p_rotate[0] * (1 - cos(angle));
+    rotationMatrix(0, 1) = p_rotate[0] * p_rotate[1] * (1 - cos(angle) - p_rotate[2] * sin(angle));//这里跟公式比多了一个括号，但是看实验结果它是对的。
+    rotationMatrix(0, 2) = p_rotate[1] * sin(angle) + p_rotate[0] * p_rotate[2] * (1 - cos(angle));
+
+
+    rotationMatrix(1, 0) = p_rotate[2] * sin(angle) + p_rotate[0] * p_rotate[1] * (1 - cos(angle));
+    rotationMatrix(1, 1) = cos(angle) + p_rotate[1] * p_rotate[1] * (1 - cos(angle));
+    rotationMatrix(1, 2) = -p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
+
+
+    rotationMatrix(2, 0) = -p_rotate[1] * sin(angle) +p_rotate[0] * p_rotate[2] * (1 - cos(angle));
+    rotationMatrix(2, 1) = p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
+    rotationMatrix(2, 2) = cos(angle) + p_rotate[2] * p_rotate[2] * (1 - cos(angle));
+
+    return rotationMatrix;
+}
+
+
+//得到当前偏移值
+Eigen::Vector3f getPlane(Cloud3D::Ptr& cloud)
+{
+
+    pcl::PCDReader reader;
+    Cloud3D::Ptr temp(new Cloud3D);
+    if(-1 == pcl::io::loadPCDFile<Point3D>("yhu.pcd", *temp))
+        qDebug()<<"error";
+    Eigen::Vector3f normal;
+
+    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+    pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+    // Create the segmentation object
+    pcl::SACSegmentation<Point3D> seg;
+    // Optional
+    seg.setOptimizeCoefficients (true);
+    // Mandatory
+    seg.setModelType (pcl::SACMODEL_PLANE);
+    seg.setMethodType (pcl::SAC_RANSAC);
+    seg.setMaxIterations(1000);
+    seg.setDistanceThreshold (0.5);
+    seg.setInputCloud (temp);
+    seg.segment (*inliers, *coefficients);
+    qDebug()<<"inliers";
+    qDebug()<<inliers->indices.size();
+    std::cerr << "Model coefficients: " << coefficients->values[0] << " "
+              << coefficients->values[1] << " "
+              << coefficients->values[2] << " "
+              << coefficients->values[3] << std::endl;
+    normal<<coefficients->values[0],coefficients->values[1],coefficients->values[2];
+    return normal;
+}
+
+float cal_avg_depth(Cloud3D::Ptr& inputCloud)
+{
+    int limitPoints=25000;
+    if(inputCloud->points.size()>25000)
+    {
+        limitPoints=25000;
+    }
+    else
+    {
+        limitPoints=inputCloud->points.size();
+    }
+    float zDepth=0;
+    for(int i=0;i<limitPoints;i++)
+    {
+        zDepth+=inputCloud->points[i].z;
+    }
+    return zDepth/limitPoints;
+}
+
 
 

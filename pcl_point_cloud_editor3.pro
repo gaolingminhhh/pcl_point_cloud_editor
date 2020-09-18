@@ -16,11 +16,11 @@ TEMPLATE = app
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
-
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
+# disables all the APIs deprecated before Qt 6.0.0
 
 
 SOURCES += \
@@ -59,7 +59,12 @@ SOURCES += \
     src/euclideanseg.cpp \
     src/kdtreesearch.cpp \
     src/crackidentity.cpp \
-    src/crackidentityform.cpp
+    src/crackidentityform.cpp\
+    src/groundfilter.cpp \
+    src/groundfilterform.cpp\
+   # src/test.cpp
+    src/editpanel.cpp
+
 
 HEADERS += \
     include/pcl/apps/point_cloud_editor/cloud.h \
@@ -100,7 +105,11 @@ HEADERS += \
     include/pcl/apps/point_cloud_editor/euclideanseg.h \
     include/pcl/apps/point_cloud_editor/kdtreesearch.h \
     include/pcl/apps/point_cloud_editor/crackidentity.h \
-    include/pcl/apps/point_cloud_editor/crackidentityform.h
+    include/pcl/apps/point_cloud_editor/crackidentityform.h \
+    include/pcl/apps/point_cloud_editor/groundfilter.h \
+    include/pcl/apps/point_cloud_editor/groundfilterform.h \
+    include/pcl/apps/point_cloud_editor/editpanel.h
+  #   include/pcl/apps/point_cloud_editor/test.h
 
 RESOURCES += \
     resources/pceditor_resources.qrc
@@ -124,9 +133,7 @@ DISTFILES += \
     resources/缩放大.png \
     resources/移动.png
 
-INCLUDEPATH+=/home/echo/git-reponsitory/pcl_point_cloud_editor/include
-#Eigen
-INCLUDEPATH += /usr/include/eigen3
+INCLUDEPATH+=./include
 
 #Vtk
 INCLUDEPATH += /usr/local/include/vtk-8.2
@@ -139,7 +146,7 @@ INCLUDEPATH += /usr/include/boost
 LIBS += /usr/lib/x86_64-linux-gnu/libboost_*.so
 
 #PCL Header
-INCLUDEPATH += /usr/local/include/pcl-1.9
+INCLUDEPATH += /usr/include/pcl-1.9
 
 #PCL Lib
 LIBS        += /usr/local/lib/libpcl_*.so
@@ -161,5 +168,9 @@ LIBS+=/usr/local/lib/libopencv*.so
 INCLUDEPATH+=/usr/include/zbar
 
 LIBS+=/usr/lib/x86_64-linux-gnu/libzbar*
+
+#Eigen
+INCLUDEPATH += /usr/local/include/eigen3
+
 
 

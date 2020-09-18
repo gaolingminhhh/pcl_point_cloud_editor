@@ -1,4 +1,26 @@
 #include <pcl/apps/point_cloud_editor/interactive_panel.h>
+
+class MyPointRepresentation : public pcl::PointRepresentation <PointNormalT>
+{
+  using pcl::PointRepresentation<PointNormalT>::nr_dimensions_;
+
+public:
+  MyPointRepresentation ()
+  {
+    // Define the number of dimensions
+    nr_dimensions_ = 4;
+  }
+
+  // Override the copyToFloatArray method to define our feature vector
+  virtual void copyToFloatArray (const PointNormalT &p, float * out) const
+  {
+    // < x, y, z, curvature >
+    out[0] = p.x;
+    out[1] = p.y;
+    out[2] = p.z;
+    out[3] = p.curvature;
+  }
+};
 using namespace std;
 Interactive_Panel::Interactive_Panel(CloudPtr cloud_src_,
                                      CloudPtr cloud_tgt_,
@@ -322,7 +344,7 @@ void Interactive_Panel::pairAlign (const PointCloud::Ptr cloud_src, const PointC
     reg.setMaxCorrespondenceDistance (1);
     //reg.RANSACOutlierRejectionThreshold(1.5);
     reg.setMaximumIterations (1000);
-    reg.setPointRepresentation (boost::make_shared<const MyPointRepresentation> (point_representation));
+    reg.setPointRepresentation(boost::make_shared<const MyPointRepresentation>(point_representation));
     reg.setInputSource (points_with_normals_src);
     reg.setInputTarget (points_with_normals_tgt);
 

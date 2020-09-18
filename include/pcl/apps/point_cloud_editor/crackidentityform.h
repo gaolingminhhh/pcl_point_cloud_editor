@@ -7,6 +7,7 @@
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QLineEdit>
+#include <QCheckBox>
 
 class CrackIdentityForm : public QDialog
 {
@@ -22,18 +23,31 @@ class CrackIdentityForm : public QDialog
     /// @brief Returns the mean
     inline
     int
-    getK () const
+    getknumbersneighborofcolor () const
     {
-      return (k);
+      return (knumbersneighborofcolor);
     }
 
     /// @brief Returns the standard deviation multiplier threshold
     inline
     float
-    getThresh () const
+    getknumbersneighborofedge () const
     {
-      return (thresh);
+      return (knumbersneighborofedge);
     }
+
+//    inline
+//    bool
+//    getisbuilding() const
+//    {
+//      return (isBuilding);
+//    }
+//    inline
+//    bool
+//    getisforest() const
+//    {
+//      return (isForest);
+//    }
 
     /// @brief Checks whether the OK button was pressed.
     inline
@@ -55,21 +69,30 @@ class CrackIdentityForm : public QDialog
 
   private:
     /// The line for entering the mean
-    QLineEdit *k_;
+    QLineEdit *knumbersneighborofcolor_;
     /// The line for entering the standard deviation multiplier threshold
-    QLineEdit *thresh_;
+    QLineEdit *knumbersneighborofedge_;
+
+//    QCheckBox *isBuilding_;
+//    QCheckBox *isForest_;
     /// The button box.
     QDialogButtonBox *button_box_;
+
+
     /// The layout of the two input QLineEdit objects
     QFormLayout *layout_;
     /// The main layout for the dialog
     QVBoxLayout* main_layout_;
     /// The mean
-     int k;
+     int knumbersneighborofcolor;
     /// The standard deviation multiplier threshold
-    float thresh;
+    int knumbersneighborofedge;
     /// The flag indicating whether the OK button was pressed
     bool ok_;
+
+    bool isBuilding;
+
+    bool isForest;
 };
 
 

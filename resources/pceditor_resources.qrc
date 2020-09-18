@@ -22,5 +22,8 @@
         <file>extracting.png</file>
         <file>保存.png</file>
         <file>compare.png</file>
+        <file>boundary.png</file>
+        <file>depth.png</file>
+        <file>合并.png</file>
     </qresource>
 </RCC>

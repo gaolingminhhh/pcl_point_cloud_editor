@@ -384,6 +384,13 @@ Cloud::getObjectSpacePoint (unsigned int index) const
 
     return (pt);
 }
+
+void
+Cloud::getObjectSpacePoints(Point3DVector& pts) const
+{
+    for(std::size_t i = 0; i < cloud_.size(); ++i)
+        pts.push_back(getObjectSpacePoint(i));
+}
 //得到
 Point3D
 Cloud::getDisplaySpacePoint (unsigned int index) const

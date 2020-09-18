@@ -27,7 +27,7 @@
 #include <pcl/registration/icp_nl.h>
 #include <pcl/registration/transforms.h>
 #include <pcl/point_representation.h>
-
+#include <pcl/registration/transformation_validation_euclidean.h>
 
 typedef pcl::FPFHSignature33 FPFHT;
 typedef pcl::PointCloud<FPFHT> FPFHCloud;
@@ -41,27 +41,7 @@ typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
 //pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
 
 // Define a new point representation for < x, y, z, curvature >
-class MyPointRepresentation : public pcl::PointRepresentation <PointNormalT>
-{
-  using pcl::PointRepresentation<PointNormalT>::nr_dimensions_;
 
-public:
-  MyPointRepresentation ()
-  {
-    // Define the number of dimensions
-    nr_dimensions_ = 4;
-  }
-
-  // Override the copyToFloatArray method to define our feature vector
-  virtual void copyToFloatArray (const PointNormalT &p, float * out) const
-  {
-    // < x, y, z, curvature >
-    out[0] = p.x;
-    out[1] = p.y;
-    out[2] = p.z;
-    out[3] = p.curvature;
-  }
-};
 
 class Interactive_Panel:public QDialog
 {

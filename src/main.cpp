@@ -56,9 +56,12 @@
 int
 main(int argc, char *argv[])
 {
-  QApplication app(argc, argv);
-  //QApplication::setWindowIcon(QIcon(":/pceditor.icns"));
-  MainWindow main_window(argc, argv);
-  main_window.show();
-  return (QApplication::exec());
+
+    QApplication::setAttribute( Qt::AA_UseDesktopOpenGL );
+    QApplication app(argc, argv);
+    //QApplication::setWindowIcon(QIcon(":/pceditor.icns"));
+
+    MainWindow main_window(argc, argv);
+    main_window.show();
+    return (QApplication::exec());
 }

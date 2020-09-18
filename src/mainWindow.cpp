@@ -42,6 +42,7 @@
 #include <pcl/apps/point_cloud_editor/cloudEditorWidget.h>
 #include <pcl/apps/point_cloud_editor/localTypes.h>
 #include <QLayout>
+#include <pcl/apps/point_cloud_editor/editpanel.h>
 
 MainWindow::MainWindow () :
     window_width_(WINDOW_WIDTH), window_height_(WINDOW_HEIGHT)
@@ -53,8 +54,8 @@ MainWindow::MainWindow (int argc, char **argv) :
     window_width_(WINDOW_WIDTH), window_height_(WINDOW_HEIGHT)
 {
     initWindow();
-    if (argc > 1)
-        cloud_editor_widget_->loadFile(argv[1]);
+  //  if (argc > 1)
+    //    cloud_editor_widget_->loadFile(argv[1]);
 }
 
 MainWindow::~MainWindow()
@@ -186,17 +187,26 @@ MainWindow::createActions ()
     toggle_blend_action_->setCheckable(true);
     toggle_blend_action_->setChecked(false);
 
-    display_z_value=new QAction(QString("显示深度值"),this);
+    display_z_value=new QAction(QIcon(icon_path+"depth.png"), QString("显示深度值"),this);
     connect(display_z_value,SIGNAL(toggled(bool)),cloud_editor_widget_,
             SLOT(displayZValue(bool)));
     display_z_value->setCheckable(true);
     display_z_value->setChecked(false);
 
-    display_boundary=new QAction(QString("显示边界"),this);
+
+
+    select_2D_action_ = new QAction(QIcon(icon_path+"select.png"),
+                                    QString("框选"), action_group_);
+
+    display_boundary=new QAction(QIcon(icon_path+"boundary.png"), QString("显示边界"),this);
     connect(display_boundary,SIGNAL(toggled(bool)),cloud_editor_widget_,
             SLOT(display_boundary(bool)));
     display_boundary->setCheckable(true);
-    display_boundary->setChecked(false);
+
+    crackdetect=new QAction(QString("显示裂缝"),this);
+    connect(crackdetect,SIGNAL(toggled(bool)),cloud_editor_widget_,
+            SLOT(crackIdentity(bool)));
+    crackdetect->setCheckable(true);
 
 
 
@@ -214,11 +224,6 @@ MainWindow::createActions ()
             SLOT(zoom()));
     zoom_->setCheckable(true);
 
-    interactive= new QAction(QIcon(icon_path+"compare.png"),
-                             QString("比较"), action_group_);
-    connect(interactive, SIGNAL(triggered()), cloud_editor_widget_,
-            SLOT(interatact()));
-
 
     move= new QAction(QIcon(icon_path+"移动.png"),
                       QString("移动"), action_group_);
@@ -227,17 +232,23 @@ MainWindow::createActions ()
     move->setCheckable(true);
 
 
+    interactive= new QAction(QIcon(icon_path+"compare.png"),
+                             QString("比较"), action_group_);
+    connect(interactive, SIGNAL(triggered()), cloud_editor_widget_,
+            SLOT(interatact()));
+
+
     undo_action_ = new QAction(QIcon(icon_path+"undo.png"),
                                QString("撤销"), action_group_);
     connect(undo_action_, SIGNAL(triggered()), cloud_editor_widget_,
             SLOT(undo()));
     undo_action_->setCheckable(false);
 
-    transform_action_ = new QAction(QIcon(icon_path+"move.png"),
-                                    QString("变换选择"), action_group_);
-    connect(transform_action_, SIGNAL(triggered()), cloud_editor_widget_,
-            SLOT(transform()));
-    transform_action_->setCheckable(true);
+//    transform_action_ = new QAction(QIcon(icon_path+"move.png"),
+//                                    QString("变换选择"), action_group_);
+//    connect(transform_action_, SIGNAL(triggered()), cloud_editor_widget_,
+//            SLOT(transform()));
+//    transform_action_->setCheckable(true);
 
 
     denoise_action_ = new QAction(QString("降噪"), this);
@@ -245,9 +256,13 @@ MainWindow::createActions ()
             SLOT(denoise()));
 
 
-    crackdetect= new QAction(QString("裂缝识别"), this);
-    connect(crackdetect, SIGNAL(triggered()), cloud_editor_widget_,
-            SLOT(crackIdentity()));
+//    crackdetect= new QAction(QString("裂缝识别"), this);
+//    connect(crackdetect, SIGNAL(toggled(bool)), cloud_editor_widget_,
+//            SLOT(crackIdentity(bool)));
+
+    groundseg=new QAction(QString("地面分割"),this);
+    connect(groundseg,SIGNAL(triggered()),cloud_editor_widget_,
+            SLOT(groundSeg()));
 
 
     //  select_action_ = new QAction(QIcon(icon_path+"click.png"),
@@ -260,14 +275,50 @@ MainWindow::createActions ()
                                         QString("反选"), action_group_);
     connect(invert_select_action_, SIGNAL(triggered()), cloud_editor_widget_,
             SLOT(invertSelect()));
-    invert_select_action_->setCheckable(false);
+    invert_select_action_->setCheckable(true);
 
     select_2D_action_ = new QAction(QIcon(icon_path+"select.png"),
                                     QString("框选"), action_group_);
     connect(select_2D_action_, SIGNAL(triggered()), cloud_editor_widget_,
             SLOT(select2D()));
     select_2D_action_->setCheckable(true);
+/*
 
+
+                   .-' _..`.
+                  /  .'_.'.'
+                 | .' (.)`.
+                 ;'   ,_   `.
+ .--.__________.'    ;  `.;-'
+|  ./               /
+|  |               /
+`..'`-._  _____, ..'
+     / | |     | |\ \
+    / /| |     | | \ \
+   / / | |     | |  \ \
+  /_/  |_|     |_|   \_\
+ |__\  |__\    |__\  |__\
+            */
+    /*
+
+
+ (__)
+ /oo\\________
+ \　/　　　　 \---\
+  \/　　　 /　 \　 \
+　　\\_|___\\_|/　　*
+　　  ||　 YY|
+　　  ||　　||
+*/
+    /*
+
+
+>(' )
+  )/
+ /(
+/  `----/
+\  ~=- /
+*/
     //select_3D_action_ = new QAction(QIcon(icon_path+"cube.png"),
     //                                tr("3D Selection"), action_group_);
     //select_3D_action_->setShortcut(tr("A"));
@@ -286,6 +337,11 @@ MainWindow::createActions ()
     connect(ranging_tool,SIGNAL(toggled(bool)),cloud_editor_widget_,
             SLOT(range(bool)));
     ranging_tool->setCheckable(true);
+
+
+    editPointCloud=new QAction(QIcon(icon_path+"合并.png"),QString("编辑点云"),action_group_);
+  //  editPointCloud=new QAction(QString("编辑点云"),this);
+    connect(editPointCloud,SIGNAL(triggered()),cloud_editor_widget_,SLOT(editPointCloud()));
 
     extracting=new QAction(QIcon(icon_path+"extracting.png"),QString("抽取"),action_group_);
     connect(extracting,SIGNAL(triggered()),cloud_editor_widget_,SLOT(extracting()));
@@ -331,8 +387,14 @@ MainWindow::createActions ()
     qrcode_recognize=new QAction(QString("识别二维码"),this);
     connect(qrcode_recognize,SIGNAL(triggered()),cloud_editor_widget_,SLOT(loadqrcode()));
 
-}
+    testAction=new QAction(QString("test"),this);
+    connect(testAction,SIGNAL(triggered()),this,SLOT(test1()));
 
+}
+void MainWindow::test1()
+{
+  //  test();
+}
 
 void
 MainWindow::createMenus ()
@@ -360,7 +422,7 @@ MainWindow::createMenus ()
     //  edit_menu_ -> addAction(paste_action_);
     edit_menu_ -> addAction(delete_action_);
     edit_menu_ -> addSeparator();
-    edit_menu_ -> addAction(transform_action_);
+    //edit_menu_ -> addAction(transform_action_);
 
 
     select_menu_ = new QMenu(QString("&选择"), this);
@@ -373,6 +435,7 @@ MainWindow::createMenus ()
     display_menu_ -> addAction(toggle_blend_action_);
     display_menu_->addAction(display_z_value);
     display_menu_->addAction(display_boundary);
+    display_menu_->addAction(crackdetect);
 
 
     view_menu_ = new QMenu(QString("&查看"), this);
@@ -385,7 +448,8 @@ MainWindow::createMenus ()
     tool_menu_->setFont(font);
     //  tool_menu_ -> setAttribute(Qt::WA_DeleteOnClose);
     tool_menu_ -> addAction(denoise_action_);
-    tool_menu_->addAction(crackdetect);
+  //  tool_menu_->addAction(crackdetect);
+    tool_menu_->addAction(groundseg);
 
     help_menu_ = new QMenu(QString("&帮助"), this);
     help_menu_->setFont(font);
@@ -395,8 +459,8 @@ MainWindow::createMenus ()
 
     recognition_menu=new QMenu(QString("&识别"),this);
     recognition_menu->setFont(font);
-    recognition_menu->addAction(SACMODEL_CIRCLE2D_action);
-    recognition_menu->addAction(SACMODEL_CYLINDER_action);
+ //   recognition_menu->addAction(SACMODEL_CIRCLE2D_action);
+  //  recognition_menu->addAction(SACMODEL_CYLINDER_action);
     //  recognition_menu->addAction(SACMODEL_LINE_action);
     //  recognition_menu->addAction(SACMODEL_NORMAL_PARALLEL_PLANE_action);
     //  recognition_menu->addAction(SACMODEL_NORMAL_PLANE_action);
@@ -406,6 +470,8 @@ MainWindow::createMenus ()
     //recognition_menu->addAction(SACMODEL_SPHERE_action);
     recognition_menu->addAction(qrcode_recognize);
 
+    recognition_menu->addAction(testAction);
+    recognition_menu->addAction(editPointCloud);
 
     menuBar() -> addMenu(file_menu_);
     menuBar() -> addMenu(edit_menu_);
@@ -435,9 +501,12 @@ MainWindow::createToolBars ()
     view_tool_bar_->addAction(move);
     //  view_tool_bar_ -> addAction(select_action_);
     view_tool_bar_ -> addAction(select_2D_action_);
+    view_tool_bar_->addAction(delete_action_);
     view_tool_bar_->addAction(ranging_tool);
     //view_tool_bar_ -> addAction(select_3D_action_);
     view_tool_bar_ -> addAction(invert_select_action_);
+    view_tool_bar_->addAction(display_boundary);
+    view_tool_bar_->addAction(display_z_value);
     //  QLabel *ptSizeLabel = new QLabel(QString("点大小:"));
     //  ptSizeLabel -> setAttribute(Qt::WA_DeleteOnClose);
     //  view_tool_bar_ -> addWidget(ptSizeLabel);
@@ -452,13 +521,13 @@ MainWindow::createToolBars ()
     edit_tool_bar_ -> addAction(undo_action_);
     //  edit_tool_bar_ -> addAction(copy_action_);
     //  edit_tool_bar_ -> addAction(cut_action_);
-    edit_tool_bar_ -> addAction(delete_action_);
     //  edit_tool_bar_ -> addAction(paste_action_);
-    edit_tool_bar_ -> addAction(transform_action_);
+   // edit_tool_bar_ -> addAction(transform_action_);
     edit_tool_bar_ -> addAction(show_stat_action_);
     edit_tool_bar_->addAction(extracting);
     edit_tool_bar_->addAction(extracting_save);
     edit_tool_bar_->addAction(interactive);
+    edit_tool_bar_->addAction(editPointCloud);
 }
 
 void

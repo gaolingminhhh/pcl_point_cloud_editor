@@ -55,6 +55,8 @@
 #include <QLayout>
 #include <QCloseEvent>
 #include <pcl/apps/point_cloud_editor/ranging.h>
+
+//#include <pcl/apps/point_cloud_editor/test.h>
 // Forward declaration to prevent circular inclusion
 class CloudEditorWidget;
 
@@ -105,12 +107,16 @@ class MainWindow : public QMainWindow
     initTimer();
 
 
+
   private Q_SLOTS:
     void
     about ();
 
     void
     help ();
+
+    void
+    test1();
 
 
   private:
@@ -138,6 +144,7 @@ class MainWindow : public QMainWindow
     /// create sliders used in the tool bar.
     void
     createSliders ();
+
 
 
     QTimer timer;
@@ -225,6 +232,7 @@ class MainWindow : public QMainWindow
 
     ///识别裂缝
     QAction *crackdetect;
+    QAction *groundseg;
 
     ///识别action
     QAction *SACMODEL_PLANE_action;
@@ -239,9 +247,13 @@ class MainWindow : public QMainWindow
     QAction *SACMODEL_NORMAL_PARALLEL_PLANE_action;
     //识别二维码
     QAction *qrcode_recognize;
+
+    QAction *editPointCloud;
     //TODO 边界识别
     ///识别end
     ///end
+    ///
+    QAction *testAction;
 
     /// the file menu
     QMenu *file_menu_;

@@ -346,6 +346,10 @@ class Cloud : public Statistics
     Point3D
     getObjectSpacePoint (unsigned int index) const;
 
+    //得到对象空间中的点
+    void
+    getObjectSpacePoints (Point3DVector& pts) const;
+
     /// @brief Compute the transformed coordinates of the indexed point in the
     /// cloud to match the display.
     /// @details To save on computation, the points in the display are not
